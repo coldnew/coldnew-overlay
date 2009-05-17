@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<herd>python</herd>
+<maintainer>
+  <name>Aaron Mavrinac</name>
+  <email>mavrinac@gmail.com</email>
+</maintainer>
+<longdescription lang="en">
+multitask allows Python programs to use generators (a.k.a. coroutines) to perform cooperative multitasking and asynchronous I/O. Applications written using multitask consist of a set of cooperating tasks that yield to a shared task manager whenever they perform a (potentially) blocking operation, such as I/O on a socket or getting data from a queue. The task manager temporarily suspends the task (allowing other tasks to run in the meantime) and then restarts it when the blocking operation is complete. Such an approach is suitable for applications that would otherwise have to use select() and/or multiple threads to achieve concurrency. 
+</longdescription>
+</pkgmetadata>
+

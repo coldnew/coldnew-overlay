@@ -1,0 +1,12 @@
+--- configure.old	2006-08-21 01:14:07.000000000 -0400
++++ configure	2008-10-18 11:16:54.000000000 -0400
+@@ -25823,6 +25823,9 @@
+       elif test -d ${jdkdir}/jre/lib/i386/native_threads; then
+         threads=native
+         JAVACMD="\${jdkdir}/jre/bin/java"
++      elif test -d ${jdkdir}/jre/lib/amd64/native_threads; then
++        threads=native
++        JAVACMD="\${jdkdir}/jre/bin/java"
+       elif test -d ${expand_jdkdir}/bin/linux/native_threads; then # IBMJDK
+ 	threads=native
+         proc=linux

@@ -1,0 +1,781 @@
+diff -Naur PySim11/kcmmemory.py PySim11.new/kcmmemory.py
+--- PySim11/kcmmemory.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/kcmmemory.py	2008-10-09 12:14:42.000000000 -0400
+@@ -3,7 +3,7 @@
+ #
+ # Source file is kcmmemory.png from KDE icons
+ 
+-from wxPython.wx import wxBitmapFromXPMData, wxImageFromBitmap
++from wx import BitmapFromXPMData, ImageFromBitmap
+ import cPickle
+ 
+ 
+@@ -30,8 +30,8 @@
+ a." )
+ 
+ def getkcmmemoryBitmap():
+-    return wxBitmapFromXPMData(getkcmmemoryData())
++    return BitmapFromXPMData(getkcmmemoryData())
+ 
+ def getkcmmemoryImage():
+-    return wxImageFromBitmap(getkcmmemoryBitmap())
++    return ImageFromBitmap(getkcmmemoryBitmap())
+ 
+diff -Naur PySim11/lacursors.py PySim11.new/lacursors.py
+--- PySim11/lacursors.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/lacursors.py	2008-10-09 12:18:53.000000000 -0400
+@@ -3,14 +3,14 @@
+ """
+ 
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ import types
+ import sys
+ 
+-class LACursors(wxWindow):
++class LACursors(Window):
+   def __init__(self, parent, id, orig, size):
+-    wxWindow.__init__(self, parent, id, orig, size)
++    Window.__init__(self, parent, id, orig, size)
+     self.parent = parent
+ 
+     EVT_PAINT(self, self.OnPaint)
+@@ -20,8 +20,8 @@
+ 
+     self.startTime = 0L
+     self.division = 100000L   # 100ns/div
+-    self.lineColor1 = wxRED
+-    self.lineColor2 = wxCYAN
++    self.lineColor1 = RED
++    self.lineColor2 = CYAN
+     self.lineWidth = 1
+     self.tickSpacing = 50     # pixels/division
+ 
+@@ -66,7 +66,7 @@
+     self.Refresh()
+ 
+   def OnPaint(self, event):
+-    dc = wxPaintDC(self)
++    dc = PaintDC(self)
+     (w, h) = self.GetClientSizeTuple()
+     (decorationDX,decorationDY) = self.parent.GetWaveformBorderSizes()
+ 
+@@ -75,7 +75,7 @@
+     # pixels/tick so we compute...
+     dX = float(self.tickSpacing) / self.division
+ 
+-    dc.SetBackground(wxBrush(self.parent.GetBackgroundColour(), wxSOLID))
++    dc.SetBackground(Brush(self.parent.GetBackgroundColour(), SOLID))
+     dc.Clear()
+ 
+     if self.pos1 is None:
+@@ -83,24 +83,24 @@
+     else:
+       x = int((self.pos1 - self.startTime)*dX + decorationDX)
+       if 0 <= x <= w:
+-        dc.SetPen(wxPen(self.lineColor1, self.lineWidth, wxSOLID))
++        dc.SetPen(Pen(self.lineColor1, self.lineWidth, SOLID))
+         if self.active==1:
+-          dc.SetBrush(wxBrush(self.lineColor1, wxSOLID))
++          dc.SetBrush(Brush(self.lineColor1, SOLID))
+         else:
+-          dc.SetBrush(wxBrush(self.lineColor1, wxTRANSPARENT))
+-        dc.DrawPolygon([wxPoint(0,h), wxPoint(-4,h-4), wxPoint(-4,0), wxPoint(4,0), wxPoint(4,h-4)], xoffset=x)
++          dc.SetBrush(Brush(self.lineColor1, TRANSPARENT))
++        dc.DrawPolygon([Point(0,h), Point(-4,h-4), Point(-4,0), Point(4,0), Point(4,h-4)], xoffset=x)
+ 
+     if self.pos2 is None:
+       pass
+     else:
+       x = int((self.pos2 - self.startTime)*dX + decorationDX)
+       if 0 <= x <= w:
+-        dc.SetPen(wxPen(self.lineColor2, self.lineWidth, wxSOLID))
++        dc.SetPen(Pen(self.lineColor2, self.lineWidth, SOLID))
+         if self.active==2:
+-          dc.SetBrush(wxBrush(self.lineColor2, wxSOLID))
++          dc.SetBrush(Brush(self.lineColor2, SOLID))
+         else:
+-          dc.SetBrush(wxBrush(self.lineColor2, wxTRANSPARENT))
+-        dc.DrawPolygon([wxPoint(0,h), wxPoint(-4,h-4), wxPoint(-4,0), wxPoint(4,0), wxPoint(4,h-4)], xoffset=x)
++          dc.SetBrush(Brush(self.lineColor2, TRANSPARENT))
++        dc.DrawPolygon([Point(0,h), Point(-4,h-4), Point(-4,0), Point(4,0), Point(4,h-4)], xoffset=x)
+ 
+   def GetC1Pos(self):
+     if not (self.pos1 is None):
+diff -Naur PySim11/ladata.py PySim11.new/ladata.py
+--- PySim11/ladata.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/ladata.py	2008-10-09 12:20:32.000000000 -0400
+@@ -2,7 +2,7 @@
+ import re
+ 
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ #---------------------------------------------------------------------------
+ 
+@@ -63,9 +63,9 @@
+   # seem to work.
+   return hasattr(w, 'Blue')
+ 
+-class LAData(wxWindow):
++class LAData(Window):
+   def __init__(self, parent, id, orig, size):
+-    wxWindow.__init__(self, parent, id, orig, size, wxSUNKEN_BORDER)
++    Window.__init__(self, parent, id, orig, size, SUNKEN_BORDER)
+ 
+     EVT_PAINT(self, self.OnPaint)
+     EVT_SIZE(self, self.OnSize)
+@@ -74,11 +74,11 @@
+ 
+     self.startTime = 0L
+     self.division = 100000L   # 100ns/div
+-    self.lineColor = wxWHITE
++    self.lineColor = WHITE
+     self.lineWidth = 2
+-    self.backgroundColor = wxBLACK
++    self.backgroundColor = BLACK
+     self.tickSpacing = 50     # pixels/division
+-    self.tickColor = wxTheColourDatabase.FindColour("YELLOW")
++    self.tickColor = TheColourDatabase.FindColour("YELLOW")
+ 
+     self.cursor1 = self.cursor2 = None
+ 
+@@ -195,13 +195,13 @@
+         t = T1
+         T1 = T2
+         T2 = t
+-      self.Refresh(1, wxRect(T1, 0, T2-T1+1, h))
++      self.Refresh(1, Rect(T1, 0, T2-T1+1, h))
+     elif not (self.cursor1 is None):
+       T1 = int((self.cursor1 - self.startTime)*self.dX)
+-      self.Refresh(1, wxRect(T1-2, 0, 5, h))
++      self.Refresh(1, Rect(T1-2, 0, 5, h))
+     elif not (oldpos is None):
+       T1 = int((oldpos - self.startTime)*self.dX)
+-      self.Refresh(1, wxRect(T1-2, 0, 5, h))
++      self.Refresh(1, Rect(T1-2, 0, 5, h))
+     else:
+       self.Refresh()
+ 
+@@ -217,23 +217,23 @@
+         t = T1
+         T1 = T2
+         T2 = t
+-      self.Refresh(1, wxRect(T1, 0, T2-T1+1, h))
++      self.Refresh(1, Rect(T1, 0, T2-T1+1, h))
+     elif not (self.cursor2 is None):
+       T1 = int((self.cursor2 - self.startTime)*self.dX)
+-      self.Refresh(1, wxRect(T1-2, 0, 5, h))
++      self.Refresh(1, Rect(T1-2, 0, 5, h))
+     elif not (oldpos is None):
+       T1 = int((oldpos - self.startTime)*self.dX)
+-      self.Refresh(1, wxRect(T1-2, 0, 5, h))
++      self.Refresh(1, Rect(T1-2, 0, 5, h))
+     else:
+       self.Refresh()
+ 
+   def OnPaint(self, event):
+-    dc = wxPaintDC(self)
++    dc = PaintDC(self)
+     (w, h) = self.GetClientSizeTuple()
+     YVal = [h-4, 4]  # Mapping from (0,1) to pixel positions
+ 
+-    dc.SetPen(wxPen(self.lineColor, self.lineWidth, wxSOLID))
+-    dc.SetBackground(wxBrush(self.backgroundColor, wxSOLID))
++    dc.SetPen(Pen(self.lineColor, self.lineWidth, SOLID))
++    dc.SetBackground(Brush(self.backgroundColor, SOLID))
+ 
+     region = self.GetUpdateRegion()
+     dc.SetClippingRegionAsRegion(region)
+@@ -279,7 +279,7 @@
+     if firstTime < self.startTime:
+       firstTime = firstTime + self.division
+ 
+-    dc.SetPen(wxPen(self.tickColor, 1, wxSOLID))
++    dc.SetPen(Pen(self.tickColor, 1, SOLID))
+     if self.events:
+       while 1:
+         T = int((firstTime - self.startTime)*self.dX)
+@@ -291,11 +291,11 @@
+     # Draw cursors
+     if not (self.cursor1 is None):
+       T = int((self.cursor1 - self.startTime)*self.dX)
+-      dc.SetPen(wxRED_PEN)
++      dc.SetPen(RED_PEN)
+       dc.DrawLine(T, 0, T, h)
+     if not (self.cursor2 is None):
+       T = int((self.cursor2 - self.startTime)*self.dX)
+-      dc.SetPen(wxPen(wxCYAN, 1, wxSOLID))
++      dc.SetPen(Pen(CYAN, 1, SOLID))
+       dc.DrawLine(T, 0, T, h)
+       
+   def Clear(self):
+@@ -332,13 +332,13 @@
+     try:
+       fid = open(filename, 'r')
+     except IOError, detail:
+-      wxMessageBox('%s: "%s"' % (detail.strerror, detail.filename), "You lose", wxOK|wxCENTRE)
++      MessageBox('%s: "%s"' % (detail.strerror, detail.filename), "You lose", OK|CENTRE)
+       return 0
+ 
+     try:
+       lines = fid.readlines()
+     except IOError, detail:
+-      wxMessageBox('%s: "%s"' % (detail.strerror, filename), "You lose", wxOK|wxCENTRE)
++      MessageBox('%s: "%s"' % (detail.strerror, filename), "You lose", OK|CENTRE)
+       return 0
+ 
+     fid.close()
+@@ -354,7 +354,7 @@
+       match = pat_c.match(line)
+       if match is None:
+         if comment_c.match(line) is None:
+-          wxMessageBox('Error at "%s" line %d\nLine is not in the format\n"CYCLE ZeroOrOne"' % (filename, linenum), "Bad file format", wxOK|wxCENTRE)
++          MessageBox('Error at "%s" line %d\nLine is not in the format\n"CYCLE ZeroOrOne"' % (filename, linenum), "Bad file format", OK|CENTRE)
+           return 0
+         else:
+           continue
+@@ -364,7 +364,7 @@
+ 
+       if events:
+         if cycle <= events[-1][0]:
+-          wxMessageBox('Error at "%s" line %d\nCycle time not in ascending order' % (filename, linenum), "Bad file format", wxOK|wxCENTRE)
++          MessageBox('Error at "%s" line %d\nCycle time not in ascending order' % (filename, linenum), "Bad file format", OK|CENTRE)
+           return 0
+ 
+         if val != events[-1][1]:
+diff -Naur PySim11/laframe.py PySim11.new/laframe.py
+--- PySim11/laframe.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/laframe.py	2008-10-09 12:21:09.000000000 -0400
+@@ -2,30 +2,30 @@
+ This module is the top-level frame for the logic analyzer window
+ """
+ 
+-from wxPython.wx import *
++from wx import *
+ from lapanel import LAPanel
+ 
+ from kcmmemory import getkcmmemoryData
+ 
+ ## Create a new frame class, derived from the wxPython Frame.
+-class LAFrame(wxFrame):
++class LAFrame(Frame):
+ 
+     def __init__(self, parent, id, title):
+         # First, call the base class' __init__ method to create the frame
+-        wxFrame.__init__(self, parent, id, title, wxPoint(-1, -1), wxSize(835, 320), wxDEFAULT_FRAME_STYLE)
++        Frame.__init__(self, parent, id, title, Point(-1, -1), Size(835, 320), DEFAULT_FRAME_STYLE)
+ 
+         EVT_CLOSE(self, self.OnCloseWindow)
+ 
+         # Add the LA panel
+-        self.la = LAPanel(self, -1, wxPoint(10,10), wxSize(660,300), wxTAB_TRAVERSAL)
++        self.la = LAPanel(self, -1, Point(10,10), Size(660,300), TAB_TRAVERSAL)
+ 
+-        self.statusBar = wxStatusBar(self, -1)
++        self.statusBar = StatusBar(self, -1)
+         self.statusBar.SetFieldsCount(1)
+         self.statusBar.SetStatusWidths([-1])
+         self.statusBar.SetStatusText("", 0)
+         self.SetStatusBar(self.statusBar)
+ 
+-        icon = wxIconFromXPMData(getkcmmemoryData())
++        icon = IconFromXPMData(getkcmmemoryData())
+         self.SetIcon(icon)
+ 
+     # This method is called automatically when the CLOSE event is
+@@ -34,10 +34,10 @@
+         if hasattr(self,'testonly'):
+           self.Destroy()
+         else:
+-          wxMessageBox("Do not close this window while EVBU is running.", "Bad user!", wxOK|wxCENTRE)
++          MessageBox("Do not close this window while EVBU is running.", "Bad user!", OK|CENTRE)
+ 
+ if __name__=="__main__":
+-  app = wxPySimpleApp()
++  app = PySimpleApp()
+   f = LAFrame(None, -1, "Stuff")
+   f.Show(1)
+   f.testonly = 1
+diff -Naur PySim11/lalabel.py PySim11.new/lalabel.py
+--- PySim11/lalabel.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/lalabel.py	2008-10-09 12:21:43.000000000 -0400
+@@ -3,7 +3,7 @@
+ """
+ 
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ import types
+ 
+@@ -20,18 +20,18 @@
+   # seem to work.
+   return hasattr(w, 'Blue')
+ 
+-class LALabel(wxWindow):
++class LALabel(Window):
+   def __init__(self, parent, id, orig, size):
+-    wxWindow.__init__(self, parent, id, orig, size, wxSUNKEN_BORDER)
++    Window.__init__(self, parent, id, orig, size, SUNKEN_BORDER)
+ 
+     EVT_PAINT(self, self.OnPaint)
+     EVT_SIZE(self, self.OnSize)
+     EVT_RIGHT_DOWN(self, self.OnRightClick)
+     EVT_LEFT_DCLICK(self, self.OnLeftDoubleClick)
+ 
+-    self.textColor = wxWHITE
++    self.textColor = WHITE
+     self.textWidth = 2
+-    self.backgroundColor = wxTheColourDatabase.FindColour("DIM GREY")
++    self.backgroundColor = TheColourDatabase.FindColour("DIM GREY")
+ 
+     self.parent = parent
+     self.label = ""
+@@ -75,11 +75,11 @@
+     self.Refresh()
+ 
+   def OnPaint(self, event):
+-    dc = wxPaintDC(self)
++    dc = PaintDC(self)
+     (W, H) = self.GetClientSizeTuple()
+ 
+-    bg = wxBrush(self.backgroundColor, wxSOLID)
+-    dc.SetFont(wxFont(14, wxSWISS, wxNORMAL, wxBOLD))
++    bg = Brush(self.backgroundColor, SOLID)
++    dc.SetFont(Font(14, SWISS, NORMAL, BOLD))
+     dc.SetTextForeground(self.textColor)
+     dc.SetTextBackground(self.backgroundColor)
+     dc.SetBackground(bg)
+diff -Naur PySim11/lapanel.py PySim11.new/lapanel.py
+--- PySim11/lapanel.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/lapanel.py	2008-10-09 12:24:08.000000000 -0400
+@@ -3,7 +3,7 @@
+ """
+ 
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ import operator
+ import types
+@@ -30,18 +30,18 @@
+ 
+ # Colors for successive traces
+ _LA_DATA_COLORS = [
+-  wxWHITE, wxRED, wxBLUE, wxGREEN, wxCYAN,
+-  wxTheColourDatabase.FindColour("YELLOW"),
+-  wxTheColourDatabase.FindColour("MAGENTA"),
+-  wxTheColourDatabase.FindColour("PINK")
++  WHITE, RED, BLUE, GREEN, CYAN,
++  TheColourDatabase.FindColour("YELLOW"),
++  TheColourDatabase.FindColour("MAGENTA"),
++  TheColourDatabase.FindColour("PINK")
+   ]
+ _LA_LAST_COLOR = -1
+ 
+ # Background color definitions for input waveforms and output waveforms
+-_LA_INDATA_COLOR = wxTheColourDatabase.FindColour("DIM GRAY")
+-_LA_OUTDATA_COLOR = wxBLACK
++_LA_INDATA_COLOR = TheColourDatabase.FindColour("DIM GRAY")
++_LA_OUTDATA_COLOR = BLACK
+ 
+-class LAPanel(wxPanel):
++class LAPanel(Panel):
+   # Future support for time units?
+   Cycles = 1
+   Ms     = 2
+@@ -49,11 +49,11 @@
+   Ns     = 4
+ 
+   def __init__(self, parent, id, orig, size, attr):
+-    wxPanel.__init__(self, parent, id, orig, size, attr)
++    Panel.__init__(self, parent, id, orig, size, attr)
+     self.parent = parent
+ 
+     (w,h) = self.GetClientSize()
+-    self.cursors = LACursors(self, -1, wxPoint(5+100+5, _LA_TOP_Y-10), wxSize(w-5-100-5-5, 10))
++    self.cursors = LACursors(self, -1, Point(5+100+5, _LA_TOP_Y-10), Size(w-5-100-5-5, 10))
+     self.isSimulating = 0
+ 
+     # The PySim11 thread calls our functions to post window update
+@@ -105,12 +105,12 @@
+     # "right" way just yet.
+ 
+     # Start time text control
+-    wxStaticBox(self, -1, "Start Time",                     wxPoint(5,   10), wxSize(176,40))
+-    self.startTimeText = wxTextCtrl(self, 100, "0",         wxPoint(10,  25), wxSize(68,20), wxTE_PROCESS_ENTER)
+-    self.startTimeUnits = wxStaticText(self, -1, "cyc",     wxPoint(80,  28), wxSize(25,20))
+-    self.startTimePDivButton = wxButton(self, 111, "+div",  wxPoint(105, 19), wxSize(37,15))
+-    self.startTimeMDivButton = wxButton(self, 112, "-div",  wxPoint(140, 19), wxSize(37,15))
+-    self.startTimeZeroButton = wxButton(self, 101, "zero",  wxPoint(105, 33), wxSize(72,15))
++    StaticBox(self, -1, "Start Time",                     Point(5,   10), Size(176,40))
++    self.startTimeText = TextCtrl(self, 100, "0",         Point(10,  25), Size(68,20), TE_PROCESS_ENTER)
++    self.startTimeUnits = StaticText(self, -1, "cyc",     Point(80,  28), Size(25,20))
++    self.startTimePDivButton = Button(self, 111, "+div",  Point(105, 19), Size(37,15))
++    self.startTimeMDivButton = Button(self, 112, "-div",  Point(140, 19), Size(37,15))
++    self.startTimeZeroButton = Button(self, 101, "zero",  Point(105, 33), Size(72,15))
+ 
+     EVT_TEXT_ENTER(self, 100, self.OnStartTimeChange)
+     EVT_BUTTON(self, 101, self.OnZeroStartTime)
+@@ -118,18 +118,18 @@
+     EVT_BUTTON(self, 112, self.OnMDiv)
+ 
+     # Division text control
+-    wxStaticBox(self, -1, "Scale",                          wxPoint(186, 10), wxSize(134,40))
+-    self.divisionText = wxTextCtrl(self, 102, "100",        wxPoint(191,25),  wxSize(68,20), wxTE_PROCESS_ENTER)
+-    self.divisionUnits = wxStaticText(self, -1, "cyc/div",  wxPoint(262,28),  wxSize(50,20))
++    StaticBox(self, -1, "Scale",                          Point(186, 10), Size(134,40))
++    self.divisionText = TextCtrl(self, 102, "100",        Point(191,25),  Size(68,20), TE_PROCESS_ENTER)
++    self.divisionUnits = StaticText(self, -1, "cyc/div",  Point(262,28),  Size(50,20))
+     
+     EVT_TEXT_ENTER(self, 102, self.OnDivisionChange)
+ 
+     # Zoom buttons
+-    wxStaticBox(self, -1, "Zoom",                           wxPoint(325, 10), wxSize(165,40))
+-    self.zoomInButton = wxButton(self, 103, "In",           wxPoint(380, 19), wxSize(50,15))
+-    self.zoomOutButton = wxButton(self, 104, "Out",         wxPoint(380, 33), wxSize(50,15))
+-    self.zoomAllButton = wxButton(self, 105, "All",         wxPoint(435, 19), wxSize(50,15))
+-    self.zoomMaxButton = wxButton(self, 106, "Max",         wxPoint(435, 33), wxSize(50,15))
++    StaticBox(self, -1, "Zoom",                           Point(325, 10), Size(165,40))
++    self.zoomInButton = Button(self, 103, "In",           Point(380, 19), Size(50,15))
++    self.zoomOutButton = Button(self, 104, "Out",         Point(380, 33), Size(50,15))
++    self.zoomAllButton = Button(self, 105, "All",         Point(435, 19), Size(50,15))
++    self.zoomMaxButton = Button(self, 106, "Max",         Point(435, 33), Size(50,15))
+     
+     EVT_BUTTON(self, 103, self.OnZoomIn)
+     EVT_BUTTON(self, 104, self.OnZoomOut)
+@@ -139,13 +139,13 @@
+     ##############
+     # Cursors
+     ##############
+-    wxStaticBox(self, -1, "Cursors",                        wxPoint(495, 10), wxSize(325,40))
+-    wxStaticText(self, -1, "C1",                            wxPoint(500, 30), wxSize(20, 15))
+-    self.c1TimeText = wxTextCtrl(self, 113, "0",            wxPoint(520, 26), wxSize(70, 20), wxTE_PROCESS_ENTER)
+-    wxStaticText(self, -1, "C2",                            wxPoint(600, 30), wxSize(20, 15))
+-    self.c2TimeText = wxTextCtrl(self, 114, "0",            wxPoint(620, 26), wxSize(70, 20), wxTE_PROCESS_ENTER)
+-    wxStaticText(self, -1, "C2-C1",                         wxPoint(700, 30), wxSize(45, 15))
+-    self.deltaCTimeText = wxTextCtrl(self, 115, "0",        wxPoint(745, 26), wxSize(70, 20), wxTE_READONLY)
++    StaticBox(self, -1, "Cursors",                        Point(495, 10), Size(325,40))
++    StaticText(self, -1, "C1",                            Point(500, 30), Size(20, 15))
++    self.c1TimeText = TextCtrl(self, 113, "0",            Point(520, 26), Size(70, 20), TE_PROCESS_ENTER)
++    StaticText(self, -1, "C2",                            Point(600, 30), Size(20, 15))
++    self.c2TimeText = TextCtrl(self, 114, "0",            Point(620, 26), Size(70, 20), TE_PROCESS_ENTER)
++    StaticText(self, -1, "C2-C1",                         Point(700, 30), Size(45, 15))
++    self.deltaCTimeText = TextCtrl(self, 115, "0",        Point(745, 26), Size(70, 20), TE_READONLY)
+ 
+     EVT_TEXT_ENTER(self, 113, self.OnTextC1)
+     EVT_TEXT_ENTER(self, 114, self.OnTextC2)
+@@ -172,14 +172,14 @@
+     # bar for our parent, an LAFrame. Now why is this? Why doesn't this code
+     # migrate up to laframe.py?
+     ######
+-    parent.menubar = wxMenuBar()
++    parent.menubar = MenuBar()
+ 
+-    waveformMenu = wxMenu()
++    waveformMenu = Menu()
+     waveformMenu.Append(401, "&Add waveform...\tCtrl-A", "Add a waveform")
+     parent.menubar.Append(waveformMenu, "&Waveform")
+     self.waveformMenu = waveformMenu
+ 
+-    viewMenu = wxMenu()
++    viewMenu = Menu()
+     viewMenu.Append(201, "&Zero\tCtrl-Z", "Set start time to 0")
+     viewMenu.Append(211, "&+Div", "Increase start time by one division (also Shift-Right)")
+     viewMenu.Append(212, "&-Div", "Decrease start time by one division (also Shift-Left)")
+@@ -206,17 +206,17 @@
+     EVT_MENU(parent, 207, self.OnCursor1)
+     EVT_MENU(parent, 208, self.OnCursor2)
+ 
+-    accel = wxAcceleratorTable([ \
+-              (wxACCEL_CTRL, ord('a'), 401), \
+-              (wxACCEL_CTRL, ord('z'), 201), \
+-              (wxACCEL_NORMAL, WXK_PRIOR, 203), \
+-              (wxACCEL_NORMAL, WXK_NEXT, 204), \
+-              (wxACCEL_CTRL, WXK_PRIOR, 206), \
+-              (wxACCEL_CTRL, WXK_NEXT, 205), \
+-              (wxACCEL_CTRL, ord('1'), 207), \
+-              (wxACCEL_CTRL, ord('2'), 208), \
+-              (wxACCEL_SHIFT, WXK_RIGHT, 211), \
+-              (wxACCEL_SHIFT, WXK_LEFT, 212)])
++    accel = AcceleratorTable([ \
++              (ACCEL_CTRL, ord('a'), 401), \
++              (ACCEL_CTRL, ord('z'), 201), \
++              (ACCEL_NORMAL, WXK_PRIOR, 203), \
++              (ACCEL_NORMAL, WXK_NEXT, 204), \
++              (ACCEL_CTRL, WXK_PRIOR, 206), \
++              (ACCEL_CTRL, WXK_NEXT, 205), \
++              (ACCEL_CTRL, ord('1'), 207), \
++              (ACCEL_CTRL, ord('2'), 208), \
++              (ACCEL_SHIFT, WXK_RIGHT, 211), \
++              (ACCEL_SHIFT, WXK_LEFT, 212)])
+     parent.SetAcceleratorTable(accel)
+ 
+   def OnPDiv(self, event):
+@@ -264,7 +264,7 @@
+     if newSpacing != self.tickSpacing:
+       self.SetTickSpacing(newSpacing)
+     else:
+-      wxMessageBox("Minimum zoom reached. Increase the scale to see more of the waveform.", "Whoa, there", wxOK|wxCENTRE)
++      MessageBox("Minimum zoom reached. Increase the scale to see more of the waveform.", "Whoa, there", OK|CENTRE)
+ 
+   def OnZoomIn(self, event):
+     newSpacing = self.tickSpacing*5/4
+@@ -372,8 +372,8 @@
+     if w >= 100:
+       for wave in self.waveforms:
+         (oldw, h) = wave.GetSize()
+-        wave.SetSize(wxSize(w,h))
+-      self.cursors.SetSize(wxSize(w-5-100, 10))
++        wave.SetSize(Size(w,h))
++      self.cursors.SetSize(Size(w-5-100, 10))
+ 
+   def OnZeroStartTime(self, event):
+     self.startTimeText.SetValue("0")
+@@ -405,7 +405,7 @@
+     if self.isSimulating:
+       return
+ 
+-    m = wxMenu()
++    m = Menu()
+     (x,y) = event.GetPosition()
+ 
+     m.Append(401, "Add waveform...")
+@@ -489,7 +489,7 @@
+     x = self.clickxy[0]
+     nextedge = self.clickwaveform.FindNextEdgeFromX(x)
+     if nextedge is None:
+-      wxMessageBox("No waveform edges exist past this point", "Outta luck", wxOK|wxCENTRE)
++      MessageBox("No waveform edges exist past this point", "Outta luck", OK|CENTRE)
+       return
+ 
+     self.cursors.SetC1PosCycles(nextedge)
+@@ -501,7 +501,7 @@
+     x = self.clickxy[0]
+     nextedge = self.clickwaveform.FindNextEdgeFromX(x)
+     if nextedge is None:
+-      wxMessageBox("No waveform edges exist past this point", "Outta luck", wxOK|wxCENTRE)
++      MessageBox("No waveform edges exist past this point", "Outta luck", OK|CENTRE)
+       return
+ 
+     self.cursors.SetC2PosCycles(nextedge)
+@@ -551,7 +551,7 @@
+     (w,h) = self.GetClientSizeTuple()
+     ix = len(self.waveforms)
+ 
+-    w = LAWaveform(self, -1, wxPoint(5, _LA_TOP_Y+ix*_LA_VSPACING), wxSize(w-10, _LA_HEIGHT), 0)
++    w = LAWaveform(self, -1, Point(5, _LA_TOP_Y+ix*_LA_VSPACING), Size(w-10, _LA_HEIGHT), 0)
+ 
+     # Open dialog to set properties
+     (isOK, newPath) = w.Edit(self.lastSTIPath)
+@@ -687,7 +687,7 @@
+     apply(func, args)
+ 
+     # Come back here for the next event in the queue
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+ 
+   # The following functions are called as fake button handlers
+   # to respond to events from the PySim11 thread.
+@@ -743,19 +743,19 @@
+ 
+   def OnCycReset(self, event):
+     self.queue.put((self.OnCycReset_handler, ()))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+ 
+   def IsSimulating(self, sim):
+     self.queue.put((self.IsSimulating_handler, (sim,)))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+ 
+   def Append(self, PortPin, T, V):
+     self.queue.put((self.Append_handler, (PortPin, T, V)))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+ 
+   def AppendRel(self, PortPin, DT, V):
+     self.queue.put((self.AppendRel_handler, (PortPin, DT, V)))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+     
+   ##################################################################
+   ##################################################################
+diff -Naur PySim11/lawaveform.py PySim11.new/lawaveform.py
+--- PySim11/lawaveform.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/lawaveform.py	2008-10-09 12:24:35.000000000 -0400
+@@ -7,7 +7,7 @@
+ import os.path
+ 
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ from ladata import LAData
+ from lalabel import LALabel
+@@ -15,9 +15,9 @@
+ 
+ _LA_LABELWIDTH = 100
+ 
+-class LAWaveform(wxWindow):
++class LAWaveform(Window):
+   def __init__(self, parent, id, orig, size, attr):
+-    wxWindow.__init__(self, parent, id, orig, size, attr)
++    Window.__init__(self, parent, id, orig, size, attr)
+ 
+     self.data = None     # Contains object of class LAData
+     self.label = None    # Contains object of class LALabel
+@@ -66,7 +66,7 @@
+       (oldw, oldh) = self.data.GetSize()
+       neww = myw - _LA_LABELWIDTH - 5
+       if neww >= 100:
+-        self.data.SetSize(wxSize(neww, oldh))
++        self.data.SetSize(Size(neww, oldh))
+ 
+     event.Skip()
+ 
+@@ -100,14 +100,14 @@
+ 
+     (w,h) = self.GetClientSizeTuple()
+ 
+-    d = LAWaveformProperties(self, -1, "Waveform Properties", wxPoint(-1,-1), lastPath)
++    d = LAWaveformProperties(self, -1, "Waveform Properties", Point(-1,-1), lastPath)
+     d.SetValues(self.portpin, self.stimfile)
+ 
+-    if d.ShowModal() == wxID_OK:
++    if d.ShowModal() == ID_OK:
+       dlgdata = d.SlurpData()
+       if len(dlgdata['pin']) and dlgdata['pin'] != self.portpin:
+-        self.label = LALabel(self, -1, wxPoint(0, 0), wxSize(_LA_LABELWIDTH, h))
+-        self.data = LAData(self, -1, wxPoint(_LA_LABELWIDTH+5, 0), wxSize(w-_LA_LABELWIDTH-5,h))
++        self.label = LALabel(self, -1, Point(0, 0), Size(_LA_LABELWIDTH, h))
++        self.data = LAData(self, -1, Point(_LA_LABELWIDTH+5, 0), Size(w-_LA_LABELWIDTH-5,h))
+ 
+         self.label.SetLabel(dlgdata['pin'])
+         self.stimfile = dlgdata['filename']
+@@ -174,7 +174,7 @@
+     assert self.isinput
+ 
+     if not self.stimfile:
+-      wxMessageBox("You must first Edit this waveform to specify a stimulus file", "First things first", wxOK|wxCENTRE)
++      MessageBox("You must first Edit this waveform to specify a stimulus file", "First things first", OK|CENTRE)
+       return
+ 
+     if self.data:
+diff -Naur PySim11/lawaveprops_dlg.py PySim11.new/lawaveprops_dlg.py
+--- PySim11/lawaveprops_dlg.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/lawaveprops_dlg.py	2008-10-09 12:26:07.000000000 -0400
+@@ -1,4 +1,4 @@
+-from wxPython.wx import *
++from wx import *
+ 
+ PortInfo = { \
+   'PA7': ('IO',"""Port A:7  PA7/PAI/OC1
+@@ -215,40 +215,40 @@
+ input channel.""")
+   }
+ 
+-class LAWaveformProperties(wxDialog):
++class LAWaveformProperties(Dialog):
+ 
+   def __init__(self, parent, id, title, orig, lastPath):
+-    wxDialog.__init__(self, parent, id, title, orig, wxDLG_SZE(parent,wxSize(160,184)), wxCAPTION|wxDIALOG_MODAL)
++    Dialog.__init__(self, parent, id, title, orig, DLG_SZE(parent,Size(160,184)), CAPTION|DIALOG_MODAL)
+ 
+-    wxStaticText(self, -1, "Port Pin", wxDLG_PNT(self,wxPoint(10,10)), wxDLG_SZE(self,wxSize(21,9)), wxALIGN_LEFT)
++    StaticText(self, -1, "Port Pin", DLG_PNT(self,Point(10,10)), DLG_SZE(self,Size(21,9)), ALIGN_LEFT)
+ 
+     self.lastPath = lastPath
+ 
+     names = PortInfo.keys()
+     names.sort()
+ 
+-    self.listbox = wxListBox(self, 100, wxDLG_PNT(self,wxPoint(10,20)), wxDLG_SZE(self,wxSize(46,90)), names, wxLB_SINGLE)
+-    self.stimulusfile = wxStaticText(self, -1, "Stimulus File", wxDLG_PNT(self,wxPoint(10,114)), wxDLG_SZE(self,wxSize(36,9)), wxALIGN_LEFT)
++    self.listbox = ListBox(self, 100, DLG_PNT(self,Point(10,20)), DLG_SZE(self,Size(46,90)), names, LB_SINGLE)
++    self.stimulusfile = StaticText(self, -1, "Stimulus File", DLG_PNT(self,Point(10,114)), DLG_SZE(self,Size(36,9)), ALIGN_LEFT)
+     self.stimulusfile.Enable(0)
+ 
+-    self.filename = wxTextCtrl(self, 101, "", wxDLG_PNT(self,wxPoint(10,123)), wxDLG_SZE(self,wxSize(100,13)), wxTE_PROCESS_ENTER)
++    self.filename = TextCtrl(self, 101, "", DLG_PNT(self,Point(10,123)), DLG_SZE(self,Size(100,13)), TE_PROCESS_ENTER)
+     self.filename.Enable(0)
+-    self.browse = wxButton(self, 102, "Browse", wxDLG_PNT(self,wxPoint(116,123)), wxDLG_SZE(self,wxSize(32,12)))
++    self.browse = Button(self, 102, "Browse", DLG_PNT(self,Point(116,123)), DLG_SZE(self,Size(32,12)))
+     self.browse.Enable(0)
+-    wxStaticBox(self, -1, "Port Pin Info", wxDLG_PNT(self,wxPoint(60,10)), wxDLG_SZE(self,wxSize(90,100)))
++    StaticBox(self, -1, "Port Pin Info", DLG_PNT(self,Point(60,10)), DLG_SZE(self,Size(90,100)))
+ 
+-    self.pininfo = wxStaticText(self, 103, "", wxDLG_PNT(self,wxPoint(62,21)), wxDLG_SZE(self,wxSize(86,85)), wxALIGN_LEFT|wxST_NO_AUTORESIZE)
++    self.pininfo = StaticText(self, 103, "", DLG_PNT(self,Point(62,21)), DLG_SZE(self,Size(86,85)), ALIGN_LEFT|ST_NO_AUTORESIZE)
+ 
+-    wxStaticLine(self, -1, wxDLG_PNT(self,wxPoint(5,145)), wxDLG_SZE(self,wxSize(148,2)), wxLI_HORIZONTAL)
+-    self.okbutton = wxButton(self, wxID_OK, "OK", wxDLG_PNT(self,wxPoint(34, 152)), wxDLG_SZE(self,wxSize(32,12)))
++    StaticLine(self, -1, DLG_PNT(self,Point(5,145)), DLG_SZE(self,Size(148,2)), LI_HORIZONTAL)
++    self.okbutton = Button(self, ID_OK, "OK", DLG_PNT(self,Point(34, 152)), DLG_SZE(self,Size(32,12)))
+     self.okbutton.Enable(0)
+-    wxButton(self, wxID_CANCEL, "Cancel", wxDLG_PNT(self,wxPoint(86, 152)), wxDLG_SZE(self,wxSize(32,12)))
++    Button(self, ID_CANCEL, "Cancel", DLG_PNT(self,Point(86, 152)), DLG_SZE(self,Size(32,12)))
+ 
+     EVT_LISTBOX(self, 100, self.OnListBox)
+     EVT_LISTBOX_DCLICK(self, 100, self.OnListBoxDoubleClick)
+     EVT_BUTTON(self, 102, self.OnBrowse)
+     EVT_TEXT_ENTER(self, 101, self.OnTextEnter)
+-    EVT_BUTTON(self, wxID_OK, self.OnOk)
++    EVT_BUTTON(self, ID_OK, self.OnOk)
+ 
+   def OnOk(self, event):
+     # Don't allow OK button when no selection. We kind-of handle
+@@ -279,13 +279,13 @@
+       self.filename.SetValue("")
+ 
+   def OnTextEnter(self, event):
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, ID_OK))
+ 
+   def OnListBoxDoubleClick(self, event):
+     s = event.GetString()
+     assert PortInfo.has_key(s)
+     self.okbutton.Enable(1)
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, ID_OK))
+ 
+   def OnListBox(self, event):
+     s = event.GetString()
+@@ -302,7 +302,7 @@
+       self.stimulusfile.Enable(1)
+ 
+   def OnBrowse(self, event):
+-    s = wxFileSelector("Select stimulus file", self.lastPath, "", ".sti", "Stimulus files (*.sti)|*.sti|All files (*.*)|*.*", wxOPEN|wxFILE_MUST_EXIST, self)
++    s = FileSelector("Select stimulus file", self.lastPath, "", ".sti", "Stimulus files (*.sti)|*.sti|All files (*.*)|*.*", OPEN|FILE_MUST_EXIST, self)
+     if (s):
+       self.filename.SetValue(s)
+ 
+@@ -315,9 +315,9 @@
+     return d
+ 
+ if __name__=="__main__":
+-  app = wxPySimpleApp()
+-  d = LAWaveformProperties(None, -1, "Waveform Properties", wxPoint(-1,-1))
+-  if d.ShowModal() == wxID_OK:
++  app = PySimpleApp()
++  d = LAWaveformProperties(None, -1, "Waveform Properties", Point(-1,-1))
++  if d.ShowModal() == ID_OK:
+     dlgdata = d.SlurpData()
+     print dlgdata['pin']
+     print dlgdata['filename']
+diff -Naur PySim11/pe_pio.py PySim11.new/pe_pio.py
+--- PySim11/pe_pio.py	2004-07-25 11:41:25.000000000 -0400
++++ PySim11.new/pe_pio.py	2008-10-09 12:26:29.000000000 -0400
+@@ -114,7 +114,7 @@
+ PAIF  = 0x10
+ 
+ try:
+-  import wxPython.wx
++  import wx
+   from laframe import LAFrame
+ 
+ except:

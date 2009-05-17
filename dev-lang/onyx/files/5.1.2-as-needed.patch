@@ -1,0 +1,21 @@
+diff -Nur onyx-5.1.2.orig/lib/libonyx/Cookfile.inc.in onyx-5.1.2/lib/libonyx/Cookfile.inc.in
+--- onyx-5.1.2.orig/lib/libonyx/Cookfile.inc.in	2005-03-17 07:54:57.000000000 +0000
++++ onyx-5.1.2/lib/libonyx/Cookfile.inc.in	2006-09-16 13:49:24.687435092 +0000
+@@ -380,7 +380,7 @@
+ #else /* if [matches aout @abi@] */
+         -shared
+ #endif
+-        -o [target] [need];
++	-Wl,-soname,[LIBOONYX_SNAME] @LIBS@ -o [target] [need];
+ 
+ #if [count [LIBOONYX_LNAME]]
+   rm -f @objroot@/lib/libonyx/lib/[LIBOONYX_LNAME];
+@@ -403,7 +403,7 @@
+ #else /* if [matches aout @abi@] */
+         -shared
+ #endif
+-        -o [target] [need];
++        -Wl,-soname,[LIBONYX_SNAME] @LIBS@ -o [target] [need];
+ 
+ #if [count [LIBONYX_LNAME]]
+   rm -f @objroot@/lib/libonyx/lib/[LIBONYX_LNAME];

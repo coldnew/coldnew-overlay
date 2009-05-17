@@ -1,0 +1,11 @@
+--- cromfs-1.4.0/Makefile
++++ cromfs-1.4.0/Makefile
+@@ -117,7 +117,7 @@
+ 
+ OBJS=cromfs.o cromfs-ops.o main.o
+ 
+-LDLIBS += -lfuse
++LDLIBS += -lfuse -ldl
+ 
+ DEPFUN_INSTALL=ignore
+ 

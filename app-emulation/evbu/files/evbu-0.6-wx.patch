@@ -1,0 +1,454 @@
+diff -Naur evbu/evbu.py evbu.new/evbu.py
+--- evbu/evbu.py	2004-07-25 11:41:25.000000000 -0400
++++ evbu.new/evbu.py	2008-10-09 12:02:20.000000000 -0400
+@@ -811,11 +811,11 @@
+   import Queue
+ 
+   ## import all of the wxPython GUI package
+-  from wxPython.wx import *
++  from wx import *
+ 
+   from evbuframe import EVBUFrame
+ 
+-  class MyApp(wxApp):
++  class MyApp(App):
+ 
+       # wxWindows calls this method to initialize the application
+       def OnInit(self):
+@@ -866,7 +866,7 @@
+             import buffalo
+             bstate = buffalo.BuffaloServices(evb)
+ 
+-          frame.Show(true)
++          frame.Show(True)
+ 
+           # Tell wxWindows that this is our main window
+           self.SetTopWindow(frame)
+@@ -884,7 +884,7 @@
+           frame.term.input.SetFocus()
+ 
+           # Return a success flag
+-          return true
++          return True
+ 
+ 
+   # Save and restore working directory on exit
+diff -Naur evbu/evbuframe.py evbu.new/evbuframe.py
+--- evbu/evbuframe.py	2004-07-25 11:41:25.000000000 -0400
++++ evbu.new/evbuframe.py	2008-10-09 11:49:35.000000000 -0400
+@@ -10,7 +10,7 @@
+ 
+ from safestruct import *
+ 
+-from wxPython.wx import *
++from wx import *
+ 
+ import G
+ from term import Term
+@@ -18,7 +18,7 @@
+ from PySim11 import PySim11
+ from kcmmemory import getkcmmemoryData
+ 
+-class EVBUFrame(wxFrame):
++class EVBUFrame(Frame):
+ 
+   def __init__(self, parent, id, title, queue, simbreak):
+     # Queue for sending user input to cmdloop
+@@ -38,11 +38,11 @@
+     # Determine sizes
+     #
+     #####################################################
+-    dc = wxScreenDC()
++    dc = ScreenDC()
+     if sys.platform == "win32":
+-      font = wxFont(12, wxMODERN, wxNORMAL, wxNORMAL)
++      font = Font(12, MODERN, NORMAL, NORMAL)
+     else:
+-      font = wxFont(14, wxMODERN, wxNORMAL, wxNORMAL)
++      font = Font(14, MODERN, NORMAL, NORMAL)
+     dc.SetFont(font)
+     ch = dc.GetCharHeight()
+     cw = dc.GetCharWidth()
+@@ -75,10 +75,10 @@
+     h = 25*ch + ch + 72
+ 
+     # First, call the base class' __init__ method to create the frame
+-    wxFrame.__init__(self, parent, id, title, wxPoint(-1, -1), wxSize(w,h), wxMINIMIZE_BOX|wxMAXIMIZE_BOX|wxSYSTEM_MENU|wxCAPTION|wxRESIZE_BORDER)
+-    self.SetAutoLayout(true)
++    Frame.__init__(self, parent, id, title, Point(-1, -1), Size(w,h), MINIMIZE_BOX|MAXIMIZE_BOX|SYSTEM_MENU|CAPTION|RESIZE_BORDER)
++    self.SetAutoLayout(True)
+ 
+-    self.term = Term(self, -1, wxPoint(0,0), (80,25), font, queue)
++    self.term = Term(self, -1, Point(0,0), (80,25), font, queue)
+ 
+     # The PySim11 thread calls our functions to post window update
+     # commands using this queue. We use a fake button with ID
+@@ -87,7 +87,7 @@
+     # (func, parms) which is simply invoked as apply(func,parms)
+     # in the handler.
+     self.handlerqueue = Queue.Queue(0)
+-    self.handlerqueuebuttonid = wxNewId()
++    self.handlerqueuebuttonid = NewId()
+     EVT_BUTTON(self, self.handlerqueuebuttonid, self.Queue_handler)
+ 
+     ##############################################
+@@ -95,25 +95,25 @@
+     # Create menu bar, event table, and accelerator
+     #
+     ##############################################
+-    self.menubar = wxMenuBar()
++    self.menubar = MenuBar()
+     self.menuIDs = {}
+-    fileMenu = wxMenu()
+-    #self.menuIDs['Preferences'] = fileMenu.preferencesID = wxNewId()
++    fileMenu = Menu()
++    #self.menuIDs['Preferences'] = fileMenu.preferencesID = NewId()
+     #fileMenu.Append(fileMenu.preferencesID, "&Preferences...\tCtrl-P", "Edit global properties for this application")
+     #fileMenu.AppendSeparator()
+-    self.menuIDs['Load'] = fileMenu.loadID = wxNewId()
++    self.menuIDs['Load'] = fileMenu.loadID = NewId()
+     fileMenu.Append(fileMenu.loadID, "&Load\tCtrl-L", "Load an S19 file")
+-    self.menuIDs['Exit'] = fileMenu.exitID = wxNewId()
++    self.menuIDs['Exit'] = fileMenu.exitID = NewId()
+     fileMenu.Append(fileMenu.exitID, "E&xit\tCtrl-Q", "Exit the program")
+     self.menubar.Append(fileMenu, "&File")
+ 
+-    simMenu = wxMenu()
+-    self.menuIDs['Stop'] = simMenu.stopID = wxNewId()
++    simMenu = Menu()
++    self.menuIDs['Stop'] = simMenu.stopID = NewId()
+     simMenu.Append(simMenu.stopID, "&Stop\tCtrl-C", "Stop the simulation")
+     self.menubar.Append(simMenu, "&Simulation")
+ 
+-    helpMenu = wxMenu()
+-    self.menuIDs['About'] = helpMenu.aboutID = wxNewId()
++    helpMenu = Menu()
++    self.menuIDs['About'] = helpMenu.aboutID = NewId()
+     helpMenu.Append(helpMenu.aboutID, "&About...", "About this program")
+     self.menubar.Append(helpMenu, "&Help")
+ 
+@@ -127,10 +127,10 @@
+     EVT_MENU(self, helpMenu.aboutID, self.OnAbout)
+     EVT_MENU(self, simMenu.stopID, self.OnSimStop)
+ 
+-    accel = wxAcceleratorTable([ \
+-              (wxACCEL_CTRL, ord('q'), fileMenu.exitID), \
+-    #          (wxACCEL_CTRL, ord('p'), fileMenu.preferencesID), \
+-              (wxACCEL_CTRL, ord('c'), simMenu.stopID)])
++    accel = AcceleratorTable([ \
++              (ACCEL_CTRL, ord('q'), fileMenu.exitID), \
++    #          (ACCEL_CTRL, ord('p'), fileMenu.preferencesID), \
++              (ACCEL_CTRL, ord('c'), simMenu.stopID)])
+     self.SetAcceleratorTable(accel)
+ 
+     ##############################################
+@@ -138,15 +138,15 @@
+     # Create status bar
+     #
+     ##############################################
+-    self.statusBar = wxStatusBar(self, -1, 0)
++    self.statusBar = StatusBar(self, -1, 0)
+     self.statusBar.SetFieldsCount(1)
+     self.statusBar.SetStatusWidths([-1])
+     self.statusBar.SetStatusText("Ready", 0)
+     self.SetStatusBar(self.statusBar)
+     #self.statusBarBackgroundColor = self.statusBar.GetBackgroundColour()
+ 
+-    self.sizer = wxBoxSizer(wxVERTICAL)
+-    self.sizer.Add(self.term, 1, wxEXPAND)
++    self.sizer = BoxSizer(VERTICAL)
++    self.sizer.Add(self.term, 1, EXPAND)
+     self.sizer.Fit(self)
+     self.SetSizer(self.sizer)
+ 
+@@ -175,7 +175,7 @@
+     # Icon
+     #
+     #########################
+-    icon = wxIconFromXPMData(getkcmmemoryData())
++    icon = IconFromXPMData(getkcmmemoryData())
+     self.SetIcon(icon)
+ 
+   #def OnSize(self, event):
+@@ -184,7 +184,7 @@
+ 
+   def Quit(self):
+     if self.isSimulating:
+-      wxMessageBox("Simulation is in progress. Terminate the simulation before quitting the program.", "Hold it, bub", wxOK|wxCENTRE)
++      MessageBox("Simulation is in progress. Terminate the simulation before quitting the program.", "Hold it, bub", OK|CENTRE)
+       return
+ 
+     self.queue.put(0)
+@@ -197,7 +197,7 @@
+     pass
+ 
+   def OnFileLoad(self, event):
+-    line = wxFileSelector("Select S19 file", os.getcwd(), "", ".s19", "S19 files (*.s19)|*.s19|All files (*.*)|*.*", wxOPEN|wxFILE_MUST_EXIST, self)
++    line = FileSelector("Select S19 file", os.getcwd(), "", ".s19", "S19 files (*.s19)|*.s19|All files (*.*)|*.*", OPEN|FILE_MUST_EXIST, self)
+     if line:
+       self.queue.put("load "+line)
+ 
+@@ -215,7 +215,7 @@
+ <http://claymore.engineer.gvsu.edu/~steriana/Python>
+ """ % (EVBUoptions.EVBUVersionMajor, EVBUoptions.EVBUVersionMinor,\
+        PySim11.PySim11VersionMajor, PySim11.PySim11VersionMinor)
+-    wxMessageBox(aboutText, "About EVBU", wxOK|wxCENTRE, self)
++    MessageBox(aboutText, "About EVBU", OK|CENTRE, self)
+ 
+   def FlushQueue(self):
+     # Flush the queue that sends user data to the EVBU
+@@ -235,7 +235,7 @@
+   # User-generated simulation stop
+   def OnSimStop(self, event):
+     if not self.isSimulating:
+-      wxMessageBox("Simulation not in progress", "Huh?", wxOK|wxCENTRE, self)
++      MessageBox("Simulation not in progress", "Huh?", OK|CENTRE, self)
+       return
+ 
+     # Clear the flag, then wait for PySim11 to set it, indicating a
+@@ -246,8 +246,8 @@
+       if self.simbreak.isSet():
+         break
+       else:
+-        ret = wxMessageBox("The simulator has not stopped yet. Press OK to try again or Cancel to give up.", "Ooops", wxOK|wxCANCEL|wxCENTRE|wxICON_ERROR)
+-        if ret != wxOK:
++        ret = MessageBox("The simulator has not stopped yet. Press OK to try again or Cancel to give up.", "Ooops", OK|CANCEL|CENTRE|ICON_ERROR)
++        if ret != OK:
+           return
+ 
+   ##################################################################
+@@ -266,7 +266,7 @@
+     apply(func, args)
+ 
+     # Come back here for the next event in the queue
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
++    PostEvent(self, CommandEvent(EVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
+ 
+   def OnCharWait_handler(self):
+     self.statusBar.SetStatusText("Simulating...waiting for a character", 0)
+@@ -302,35 +302,35 @@
+ 
+   def OnCharWait(self, event):
+     self.handlerqueue.put((self.OnCharWait_handler, ()))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
++    PostEvent(self, CommandEvent(EVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
+ 
+   def OnNoCharWait(self, event):
+     self.handlerqueue.put((self.OnNoCharWait_handler, ()))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
++    PostEvent(self, CommandEvent(EVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
+ 
+   def OnSimStart(self, event):
+     self.handlerqueue.put((self.OnSimStart_handler, ()))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
++    PostEvent(self, CommandEvent(EVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
+ 
+   def OnSimEnd(self, event):
+     self.handlerqueue.put((self.OnSimEnd_handler, ()))
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
++    PostEvent(self, CommandEvent(EVT_COMMAND_BUTTON_CLICKED, self.handlerqueuebuttonid))
+ 
+ if __name__=="__main__":      
+-  class MyApp(wxApp):
++  class MyApp(App):
+ 
+       # wxWindows calls this method to initialize the application
+       def OnInit(self):
+ 
+           # Create an instance of our customized Frame class
+           frame = EVBUFrame(None, -1, "This is a test")
+-          frame.Show(true)
++          frame.Show(True)
+ 
+           # Tell wxWindows that this is our main window
+           self.SetTopWindow(frame)
+ 
+           # Return a success flag
+-          return true
++          return True
+ 
+ 
+   app = MyApp(0)     # Create an instance of the application class
+diff -Naur evbu/kcmmemory.py evbu.new/kcmmemory.py
+--- evbu/kcmmemory.py	2004-07-25 11:41:25.000000000 -0400
++++ evbu.new/kcmmemory.py	2008-10-09 11:37:52.000000000 -0400
+@@ -3,7 +3,7 @@
+ #
+ # Source file is kcmmemory.png from KDE icons
+ 
+-from wxPython.wx import wxBitmapFromXPMData, wxImageFromBitmap
++from wx import BitmapFromXPMData, ImageFromBitmap
+ import cPickle
+ 
+ 
+@@ -30,8 +30,8 @@
+ a." )
+ 
+ def getkcmmemoryBitmap():
+-    return wxBitmapFromXPMData(getkcmmemoryData())
++    return BitmapFromXPMData(getkcmmemoryData())
+ 
+ def getkcmmemoryImage():
+-    return wxImageFromBitmap(getkcmmemoryBitmap())
++    return ImageFromBitmap(getkcmmemoryBitmap())
+ 
+diff -Naur evbu/term.py evbu.new/term.py
+--- evbu/term.py	2004-07-25 11:41:25.000000000 -0400
++++ evbu.new/term.py	2008-10-09 12:01:44.000000000 -0400
+@@ -1,5 +1,5 @@
+ ## import all of the wxPython GUI package
+-from wxPython.wx import *
++from wx import *
+ 
+ import Queue
+ 
+@@ -57,9 +57,9 @@
+ #     Term -- terminal with read-only display and single-input line
+ 
+ 
+-class MyTextCtrl(wxTextCtrl):
++class MyTextCtrl(TextCtrl):
+   def __init__(self, parent, id, title, orig, size, style):
+-    wxTextCtrl.__init__(self, parent, id, title, orig, size, style)
++    TextCtrl.__init__(self, parent, id, title, orig, size, style)
+     self.parent = parent
+ 
+     EVT_CHAR(self, self.OnChar)
+@@ -68,7 +68,7 @@
+     self.parent.RawChar(event.GetKeyCode())
+     event.Skip()
+ 
+-class Term(wxWindow):
++class Term(Window):
+   def __init__(self, parent, id, orig, dimension, font, queue):
+     self.parent = parent
+ 
+@@ -86,7 +86,7 @@
+     # List of previously entered lines for recalling with up/down arrows
+     self.history = History(100)
+ 
+-    dc = wxClientDC(parent)
++    dc = ClientDC(parent)
+     dc.SetFont(font)
+     ch = dc.GetCharHeight()
+     cw = dc.GetCharWidth()
+@@ -95,37 +95,37 @@
+     w = dimension[0]*cw + 25
+     h = dimension[1]*ch + ch + 18
+ 
+-    wxWindow.__init__(self, parent, id, orig, wxSize(w,h), wxNO_BORDER)
++    Window.__init__(self, parent, id, orig, Size(w,h), NO_BORDER)
+ 
+     EVT_SIZE(self, self.OnSize)
+-    self.sizer = wxBoxSizer(wxVERTICAL)
++    self.sizer = BoxSizer(VERTICAL)
+ 
+     # Slop approach
+     h = dimension[1]*ch + 8
+ 
+-    self.display = wxTextCtrl(self, 200, "", wxPoint(0,0), wxSize(w,h), wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH|wxTE_NOHIDESEL)
++    self.display = TextCtrl(self, 200, "", Point(0,0), Size(w,h), TE_MULTILINE|TE_READONLY|TE_RICH|TE_NOHIDESEL)
+ 
+     sep = 4
+     h2 = ch + 8
+ 
+-    self.input   = MyTextCtrl(self, 201, "", wxPoint(0,h+sep), wxSize(w,h2), wxTE_PROCESS_ENTER|wxTE_RICH)
++    self.input   = MyTextCtrl(self, 201, "", Point(0,h+sep), Size(w,h2), TE_PROCESS_ENTER|TE_RICH)
+ 
+     self.display.SetFont(font)
+-    self.display.SetDefaultStyle(wxTextAttr(wxGREEN, wxBLACK, font))
+-    self.display.SetBackgroundColour(wxBLACK)
++    self.display.SetDefaultStyle(TextAttr(GREEN, BLACK, font))
++    self.display.SetBackgroundColour(BLACK)
+ 
+     self.input.SetFont(font)
+-    self.input.SetBackgroundColour(wxBLACK)
+-    self.input.SetForegroundColour(wxWHITE)
++    self.input.SetBackgroundColour(BLACK)
++    self.input.SetForegroundColour(WHITE)
+ 
+     EVT_TEXT_ENTER(self, 201, self.OnInput)
+     EVT_BUTTON(self, 301, self.OnWriteQueue)
+ 
+     # Try using a sizer
+-    self.sizer.Add(self.display, 1, wxEXPAND)
+-    self.sizer.Add(w, 5, 0, wxEXPAND)
+-    self.sizer.Add(self.input, 0, wxEXPAND)
+-    self.SetAutoLayout(true)
++    self.sizer.Add(self.display, 1, EXPAND)
++    #self.sizer.Add(w, 5, 0, EXPAND)
++    self.sizer.Add(self.input, 0, EXPAND)
++    self.SetAutoLayout(True)
+     self.SetSizer(self.sizer)
+     self.sizer.Fit(self)
+ 
+@@ -135,14 +135,14 @@
+     #print 'Display:', (X,Y), (x,y)
+     #dX = X-x
+     #dY = Y-y
+-    #self.display.SetClientSize(wxSize(dimension[0]*cw + dX, dimension[1]*ch + dY))
++    #self.display.SetClientSize(Size(dimension[0]*cw + dX, dimension[1]*ch + dY))
+ 
+     #(X,Y) = self.input.GetSizeTuple()
+     #(x,y) = self.input.GetClientSizeTuple()
+     #print 'Input:', (X,Y), (x,y)
+     #dX = X-x
+     #dY = Y-y
+-    #self.input.SetClientSize(wxSize(dimension[0]*cw + dX, 1*ch + dY))
++    #self.input.SetClientSize(Size(dimension[0]*cw + dX, 1*ch + dY))
+ 
+   def OnSize(self, event):
+     #print 'OnSize:', event.GetSize()
+@@ -186,44 +186,44 @@
+     for line in lines[:-1]:
+       self.writequeue.put(line+'\n')
+     self.writequeue.put(lines[-1])
+-    wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++    PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+ 
+   def OnWriteQueue(self, event):
+     try:
+       self.display.AppendText(self.writequeue.get(0))
+-      wxPostEvent(self, wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
++      PostEvent(self, CommandEvent(wxEVT_COMMAND_BUTTON_CLICKED, 301))
+     except Queue.Empty:
+       pass
+ 
+ #---------------------------------------------------------------------------
+ if __name__=="__main__":
+-    class MyFrame(wxFrame):
++    class MyFrame(Frame):
+ 
+       def __init__(self, parent, id, title):
+         # First, call the base class' __init__ method to create the frame
+-        wxFrame.__init__(self, parent, id, title, wxPoint(-1, -1), wxSize(800, 450))
++        Frame.__init__(self, parent, id, title, Point(-1, -1), Size(800, 450))
+ 
+         EVT_CLOSE(self, self.OnCloseWindow)
+ 
+-        self.term = Term(self, -1, wxPoint(0,0), wxSize(610,430))
++        self.term = Term(self, -1, Point(0,0), Size(610,430))
+ 
+       def OnCloseWindow(self, event):
+         self.Destroy()
+ 
+-    class MyApp(wxApp):
++    class MyApp(App):
+ 
+         # wxWindows calls this method to initialize the application
+         def OnInit(self):
+ 
+             # Create an instance of our customized Frame class
+             frame = MyFrame(None, -1, "This is a test")
+-            frame.Show(true)
++            frame.Show(True)
+ 
+             # Tell wxWindows that this is our main window
+             self.SetTopWindow(frame)
+ 
+             # Return a success flag
+-            return true
++            return True
+ 
+ 
+     app = MyApp(0)     # Create an instance of the application class

@@ -1,0 +1,8 @@
+# ChangeLog for net-p2p/retroshare
+# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*retroshare-0.4.09b (02 Mar 2009)
+
+  02 Mar 2009; Aaron Mavrinac <mavrinac@gmail.com> retroshare-0.4.09b.ebuild:
+  Initial import

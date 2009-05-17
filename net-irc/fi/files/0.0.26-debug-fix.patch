@@ -1,0 +1,22 @@
+--- fi-0.0.26/main.c.orig
++++ fi-0.0.26/main.c
+@@ -37,7 +37,9 @@
+ extern int input_window_width;
+ extern int current_server;
+ extern int current_server_channel_nr;
++#ifdef _DEBUG
+ void dump_mem(int sig);
++#endif
+ 
+ /* editline */
+ char *user_line = NULL;
+@@ -413,7 +415,9 @@
+ 		error_exit("you should specify at least 1 server in the configurationfile");
+ 
+ 	signal(SIGPIPE, SIG_IGN);
++#ifdef _DEBUG
+ 	signal(SIGHUP, dump_mem);
++#endif
+ 
+ 	if (theme.start_in_channellist_window)
+ 		cursor_mode = CM_CHANNELS;

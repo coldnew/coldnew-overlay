@@ -1,0 +1,1 @@
+GLUSTERFSD_OPTS="--spec-file=/etc/glusterfs/glusterfsd.vol"

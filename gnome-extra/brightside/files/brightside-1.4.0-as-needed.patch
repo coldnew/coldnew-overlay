@@ -1,0 +1,21 @@
+diff -Nur brightside-1.4.0.orig/src/Makefile.am brightside-1.4.0/src/Makefile.am
+--- brightside-1.4.0.orig/src/Makefile.am	2004-06-24 04:08:01.000000000 +0000
++++ brightside-1.4.0/src/Makefile.am	2006-12-12 19:22:24.069800855 +0000
+@@ -36,7 +36,7 @@
+ 	brightside-util.c brightside-util.h			\
+ 	brightside.c brightside.h
+ 
+-brightside_LDFLAGS =						\
++brightside_LDADD =						\
+ 	$(EXTRA_GNOME_LIBS)				\
+ 	$(ALSA_LIBS)					\
+ 	$(INTLLIBS)
+@@ -53,7 +53,7 @@
+ 
+ EGGFILES2 = eggtrayicon.h eggtrayicon.c
+ 
+-brightside_properties_LDFLAGS = 			\
++brightside_properties_LDADD = 			\
+ 	$(EXTRA_GNOME_LIBS)			\
+ 	$(INTLLIBS)
+ 

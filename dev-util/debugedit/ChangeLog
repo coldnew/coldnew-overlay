@@ -1,0 +1,7 @@
+# ChangeLog for dev-util/debugedit
+# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  24 Feb 2008; Sven Wegener <swegener@gentoo.org> +debugedit-5.0.0.ebuild:
+  Initial commit.
+

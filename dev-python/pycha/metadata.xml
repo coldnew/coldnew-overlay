@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<herd>python</herd>
+<maintainer>
+  <name>Aaron Mavrinac</name>
+  <email>mavrinac@gmail.com</email>
+</maintainer>
+<longdescription lang="en">
+Pycha is a very simple Python package for drawing charts using the great Cairo library.
+</longdescription>
+</pkgmetadata>
+

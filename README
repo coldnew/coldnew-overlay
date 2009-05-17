@@ -1,1 +1,5 @@
-This is coldnew's overlay
+PORTDIR_OVERLAY of Yen-Chin,Lee <coldnew.tw@gmail.com>
+-----------------------------------------------------
+This overlay contains some experimental stuff, but mostly stuff I quickly wrote
+an ebuild for or grabed it from bugzilla and did not have the time to commit it
+to the official tree or do not consider it ready for it.

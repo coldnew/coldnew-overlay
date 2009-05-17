@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<herd>net-p2p</herd>
+<maintainer>
+  <name>Aaron Mavrinac</name>
+  <email>mavrinac@gmail.com</email>
+</maintainer>
+<longdescription lang="en">
+Retroshare is an encrypted IM with filesharing, mediaplayer, email, chatgroups and some games.
+</longdescription>
+</pkgmetadata>

@@ -1,0 +1,8 @@
+# ChangeLog for app-emulation/evbu
+# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*evbu-0.6 (09 Oct 2008)
+
+  09 Oct 2008; Aaron Mavrinac <mavrinac@gmail.com> evbu-0.6.ebuild: 
+  Initial import

@@ -1,0 +1,11 @@
+# ChangeLog for sys-fs/cromfs
+# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  29 Apr 2008; Sven Wegener <swegener@gentoo.org>
+  +files/cromfs-1.5.4-strip-and-upx.patch, +cromfs-1.5.4.ebuild:
+  Version bump.
+
+  22 Jul 2007; Sven Wegener <swegener@gentoo.org> ChangeLog:
+  Added initial ChangeLog.
+

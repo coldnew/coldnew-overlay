@@ -1,0 +1,24 @@
+diff -Nur pam-script-1.1.0.ori/pam_script.c pam-script-1.1.0/pam_script.c
+--- pam-script-1.1.0.ori/pam_script.c	2007-09-06 19:52:17.000000000 +0000
++++ pam-script-1.1.0/pam_script.c	2008-01-21 19:14:08.977281243 +0000
+@@ -15,6 +15,10 @@
+  *  along with this program - see the file COPYING.
+  */
+ 
++#ifdef HAVE_CONFIG_H
++#  include "config.h"
++#endif
++
+ /* --- includes --- */
+ #include <stdio.h>
+ #include <stdarg.h>			/* varg... */
+@@ -36,9 +40,6 @@
+ 
+ #include <security/pam_appl.h>		/* pam_* */
+ #include <security/pam_modules.h>
+-#ifdef HAVE_CONFIG_H
+-#  include "config.h"
+-#endif
+ 
+ /* --- customize these defines --- */
+ 

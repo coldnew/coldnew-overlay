@@ -1,0 +1,7 @@
+# ChangeLog for sys-fs/memcachefs
+# Copyright 1999-2007 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  11 Aug 2007; Sven Wegener <swegener@gentoo.org> +memcachefs-0.5.ebuild:
+  Initial commit, ebuild written by me.
+

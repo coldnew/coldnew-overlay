@@ -1,0 +1,18 @@
+diff -Nur pam_ccreds-4.orig/Makefile.am pam_ccreds-4/Makefile.am
+--- pam_ccreds-4.orig/Makefile.am	2006-07-05 15:18:48.000000000 +0000
++++ pam_ccreds-4/Makefile.am	2007-03-05 20:22:33.503265112 +0000
+@@ -8,10 +8,12 @@
+ pam_ccreds_so_LDFLAGS = @pam_ccreds_so_LDFLAGS@
+ 
+ cc_test_SOURCES = cc_test.c
+-cc_test_LDFLAGS = -Wl,-rpath -Wl,$(libdir)/security pam_ccreds.so -lpam -lpam_misc
++cc_test_LDFLAGS = -Wl,-rpath -Wl,$(libdir)/security
++cc_test_LDADD = pam_ccreds.so -lpam -lpam_misc
+ 
+ cc_dump_SOURCES = cc_dump.c
+-cc_dump_LDFLAGS = -Wl,-rpath -Wl,$(libdir)/security pam_ccreds.so -lpam -lpam_misc
++cc_dump_LDFLAGS = -Wl,-rpath -Wl,$(libdir)/security
++cc_dump_LDADD = pam_ccreds.so -lpam -lpam_misc
+ 
+ DEFS = @DEFS@
+ 
