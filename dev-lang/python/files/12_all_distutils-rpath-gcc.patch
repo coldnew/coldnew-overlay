@@ -1,0 +1,12 @@
+--- Lib/distutils/unixccompiler.py.orig	2005-08-09 11:54:17.000000000 +0900
++++ Lib/distutils/unixccompiler.py	2005-08-09 12:54:37.000000000 +0900
+@@ -207,7 +207,8 @@
+             return "+s -L" + dir
+         elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
+             return ["-rpath", dir]
+-        elif compiler[:3] == "gcc" or compiler[:3] == "g++":
++        # This should recognize gcc, g++, gcc-x.y, ccache gcc, etc.
++        elif compiler.find("gcc") >= 0 or compiler.find("g++") >= 0:
+             return "-Wl,-R" + dir
+         else:
+             return "-R" + dir

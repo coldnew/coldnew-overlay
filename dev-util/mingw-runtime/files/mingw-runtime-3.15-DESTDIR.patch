@@ -1,0 +1,24 @@
+--- Makefile.in	2008-09-08 13:04:54.090052168 -0500
++++ Makefile.in	2008-09-08 13:06:19.946064873 -0500
+@@ -81,6 +81,12 @@
+ inst_docdir:=$(prefix)/doc/runtime
+ endif
+ endif
++inst_bindir:=$(DESTDIR)$(inst_bindir)
++inst_includedir:=$(DESTDIR)$(inst_includedir)
++inst_libdir:=$(DESTDIR)$(inst_libdir)
++inst_docdir:=$(DESTDIR)$(inst_docdir)
++mandir:=$(DESTDIR)$(mandir)
++
+ 
+ # The Mingw headers are installed under a subdirectory of
+ # $(tooldir)/include when configuring in Cygwin.
+@@ -231,7 +237,7 @@
+ 
+ all_dlls_host: $(DLLS)
+ 
+-install_dlls_host:
++install_dlls_host: install-dirs
+ 	for i in $(DLLS); do \
+ 		$(INSTALL_PROGRAM) $$i $(inst_bindir)/$$i ; \
+ 	done
