@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/dev/wschlich/!svn/ver/248/testing/app-antivirus/antivir-mailgate/files/3.0.0_p14
+END
+antivir-mailgate.initd
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/dev/wschlich/!svn/ver/248/testing/app-antivirus/antivir-mailgate/files/3.0.0_p14/antivir-mailgate.initd
+END
+avmailgate-scanner.conf.diff.bz2
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/dev/wschlich/!svn/ver/248/testing/app-antivirus/antivir-mailgate/files/3.0.0_p14/avmailgate-scanner.conf.diff.bz2
+END
+avmailgate.conf.diff.postfix.bz2
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/dev/wschlich/!svn/ver/248/testing/app-antivirus/antivir-mailgate/files/3.0.0_p14/avmailgate.conf.diff.postfix.bz2
+END

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/dev/wschlich/!svn/ver/240/testing/app-antivirus/antivir-core
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/dev/wschlich/!svn/ver/207/testing/app-antivirus/antivir-core/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/dev/wschlich/!svn/ver/240/testing/app-antivirus/antivir-core/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/dev/wschlich/!svn/ver/240/testing/app-antivirus/antivir-core/ChangeLog
+END
+antivir-core-2.1.12_p19.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/dev/wschlich/!svn/ver/240/testing/app-antivirus/antivir-core/antivir-core-2.1.12_p19.ebuild
+END
