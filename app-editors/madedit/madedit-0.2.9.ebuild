@@ -26,7 +26,7 @@ src_unpack() {
 }
 
 src_compile() {
-	./configure --prefix=/usr
+	econf
 	emake || die
 }
 
