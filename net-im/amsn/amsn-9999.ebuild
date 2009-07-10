@@ -3,7 +3,11 @@
 
 ESVN_REPO_URI="https://amsn.svn.sourceforge.net/svnroot/amsn/trunk/amsn"
 ESVN_PROJECT="amsn"
-inherit subversion eutils
+inherit subversion eutils autotools
+
+MY_P=${P}
+S="${WORKDIR}/${MY_P}"
+
 
 DESCRIPTION="Alvaro's Messenger client for MSN"
 HOMEPAGE="http://amsn.sourceforge.net"
@@ -19,7 +23,7 @@ DEPEND=">=dev-lang/tcl-8.4
 	>=dev-lang/tk-8.4
 	>=dev-tcltk/tls-1.4.1
 	xft? (
-		>=dev-lang/tcl-8.5 
+		>=dev-lang/tcl-8.5
 		>=dev-lang/tk-8.5 )
 	skins? ( =net-im/amsn-extras-9999 )
 	plugins? ( =net-im/amsn-extras-9999 )"
@@ -32,6 +36,13 @@ pkg_setup() {
    eerror "That means there are NO promises it will work."
 }
 
+#src_unpack() {
+#		cd "${S}"
+#		epatch "${FILESDIR}/${PN}-0.97_rc1-nostrip.patch"
+#		eautoconf
+#}
+
+
 src_compile() {
 	econf \
 		$(use_enable debug) \
@@ -40,7 +51,7 @@ src_compile() {
 		$(use_enable xft) \
 		|| die "configure failed"
 
-	emake || die
+	emake || die "configure failed"
 
 }
 
@@ -69,7 +80,7 @@ src_install() {
 		dodir /usr/share/pixmaps
 		cp -a ${S}/icons/32x32/* ${D}/usr/share/pixmaps/
 	fi
-	
+
 	if use kde
 	then
 		dodir /usr/share/applnk/Internet

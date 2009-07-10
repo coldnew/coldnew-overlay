@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/385/trunk/dev-texlive/texlive-xetexdev
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/381/trunk/dev-texlive/texlive-xetexdev/metadata.xml
+END
+texlive-xetexdev-2007.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/385/trunk/dev-texlive/texlive-xetexdev/texlive-xetexdev-2007.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/385/trunk/dev-texlive/texlive-xetexdev/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/385/trunk/dev-texlive/texlive-xetexdev/ChangeLog
+END

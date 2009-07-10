@@ -1,0 +1,11 @@
+diff -Naurp ati.orig/lib/modules/fglrx/build_mod/drm_os_linux.h ati.final/lib/modules/fglrx/build_mod/drm_os_linux.h
+--- ati.orig/lib/modules/fglrx/build_mod/drm_os_linux.h	2009-03-28 18:25:49.156845665 +0000
++++ ati.final/lib/modules/fglrx/build_mod/drm_os_linux.h	2009-03-28 18:26:43.489755684 +0000
+@@ -42,7 +42,6 @@
+ #define DRM_IRQ_ARGS		int irq, void *arg, struct pt_regs *regs
+ /** backwards compatibility with old irq return values */
+ #ifndef IRQ_HANDLED
+-typedef void irqreturn_t;
+ #define IRQ_HANDLED   /* nothing */
+ #define IRQ_NONE      /* nothing */
+ #endif
