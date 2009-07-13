@@ -15,7 +15,9 @@ SRC_URI="${KERNEL_URI}
 KEYWORDS="~alpha ~amd64 ~ppc ~ppc64 ~x86"
 
 UNIPATCH_LIST="${DISTDIR}/hh-patches-${PVR}.tar.bz2
-               ${FILESDIR}/tuxonice-3.0-for-2.6.29.patch.bz2
+               ${FILESDIR}/utf8-kernel-2.6-fonts2.patch.bz2
+               ${FILESDIR}/utf8-kernel-2.6-core-1.patch.bz2
+               ${FILESDIR}/utf8-kernel-2.6-fbcondecor-1.patch.bz2
 "
 UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
