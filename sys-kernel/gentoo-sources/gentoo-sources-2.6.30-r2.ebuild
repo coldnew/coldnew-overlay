@@ -16,11 +16,10 @@ HOMEPAGE="http://dev.gentoo.org/~dsd/genpatches"
 DESCRIPTION="Full sources including the Gentoo patchset for the ${KV_MAJOR}.${KV_MINOR} kernel tree"
 SRC_URI="${KERNEL_URI} ${GENPATCHES_URI} ${ARCH_URI}"
 
-UNIPATCH_LIST="
-               ${FILESDIR}/utf8-kernel-2.6-core-1.patch.bz2
-               ${FILESDIR}/utf8-kernel-2.6-fonts2.patch.bz2
-               ${FILESDIR}/utf8-kernel-2.6-fbcondecor-1.patch.bz2
-"
+UNIPATCH_LIST=" ${FILESDIR}/utf8-kernel-2.6-core-1.patch.bz2
+				${FILESDIR}/utf8-kernel-2.6-fonts2.patch.bz2
+				${FILESDIR}/utf8-kernel-2.6-fbcondecor-1.patch.bz2"
+
 UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
 
