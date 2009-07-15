@@ -1,0 +1,63 @@
+diff --git linux/arch/x86/Kconfig.cpu linux/arch/x86/Kconfig.cpu
+index 8078955..fe1e328 100644
+--- a/arch/x86/Kconfig.cpu
++++ b/arch/x86/Kconfig.cpu
+@@ -281,6 +281,17 @@ config X86_GENERIC
+ 	  This is really intended for distributors who need more
+ 	  generic optimizations.
+ 
++config X86_MARCH_NATIVE
++	bool "Use -march=native cflag (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
++	help
++	  Setting Y here, will result in passing the -march=native and
++	  -mtune=native cflags to GCC while compiling the kernel, which
++	  makes GCC check the CPU capabilities and use the best cflags
++	  for your computer.
++
++	  Set Y here only if you use >=gcc-4.2.0.
++
+ endif
+ 
+ config X86_CPU
+diff --git linux/arch/x86/Makefile_32.cpu linux/arch/x86/Makefile_32.cpu
+index 80177ec..0712193 100644
+--- a/arch/x86/Makefile_32.cpu
++++ b/arch/x86/Makefile_32.cpu
+@@ -10,6 +10,9 @@ tune		= $(call cc-option,-mcpu=$(1),$(2))
+ endif
+ 
+ align := $(cc-option-align)
++ifeq ($(CONFIG_X86_MARCH_NATIVE),y)
++cflags-y			+= -march=native -mtune=native
++else
+ cflags-$(CONFIG_M386)		+= -march=i386
+ cflags-$(CONFIG_M486)		+= -march=i486
+ cflags-$(CONFIG_M586)		+= -march=i586
+@@ -25,11 +28,11 @@ cflags-$(CONFIG_MK6)		+= -march=k6
+ # They make zero difference whatsosever to performance at this time.
+ cflags-$(CONFIG_MK7)		+= -march=athlon
+ cflags-$(CONFIG_MK8)		+= $(call cc-option,-march=k8,-march=athlon)
+-cflags-$(CONFIG_MCRUSOE)	+= -march=i686 $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
+-cflags-$(CONFIG_MEFFICEON)	+= -march=i686 $(call tune,pentium3) $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
++cflags-$(CONFIG_MCRUSOE)	+= -march=i686
++cflags-$(CONFIG_MEFFICEON)	+= -march=i686 $(call tune,pentium3)
+ cflags-$(CONFIG_MWINCHIPC6)	+= $(call cc-option,-march=winchip-c6,-march=i586)
+ cflags-$(CONFIG_MWINCHIP3D)	+= $(call cc-option,-march=winchip2,-march=i586)
+-cflags-$(CONFIG_MCYRIXIII)	+= $(call cc-option,-march=c3,-march=i486) $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
++cflags-$(CONFIG_MCYRIXIII)	+= $(call cc-option,-march=c3,-march=i486)
+ cflags-$(CONFIG_MVIAC3_2)	+= $(call cc-option,-march=c3-2,-march=i686)
+ cflags-$(CONFIG_MVIAC7)		+= -march=i686
+ cflags-$(CONFIG_MCORE2)		+= -march=i686 $(call tune,core2)
+@@ -39,6 +42,11 @@ cflags-$(CONFIG_X86_ELAN)	+= -march=i486
+ 
+ # Geode GX1 support
+ cflags-$(CONFIG_MGEODEGX1)	+= -march=pentium-mmx
++endif
++
++cflags-$(CONFIG_MCRUSOE)	+= $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
++cflags-$(CONFIG_MEFFICEON)	+= $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
++cflags-$(CONFIG_MCYRIXIII)	+= $(align)-functions=0 $(align)-jumps=0 $(align)-loops=0
+ 
+ # add at the end to overwrite eventual tuning options from earlier
+ # cpu entries
