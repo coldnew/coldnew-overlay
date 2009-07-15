@@ -11,26 +11,17 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 HOMEPAGE=""
 
-DESCRIPTION="Full sources including the Gentoo patchset and some other collected
-on Internet by coldnew for personaly use"
+DESCRIPTION="Full sources including the Gentoo patchset and some other stuff collected
+on  the Internet by coldnew for personaly use"
 
-SRC_URI="${KERNEL_URI}"
+SRC_URI="${KERNEL_URI}
+mirror://sourceforge/coldnew-overlay/coldnew-patches-${PV}.tar.lzma"
 
-UNIPATCH_LIST=" 
-				${FILESDIR}/${PV}/0010_reiser4-for-2.6.30.patch.lzma
-				${FILESDIR}/${PV}/0040_aufs2-2.6.30-das.patch.lzma
-				${FILESDIR}/${PV}/0050_tuxonice-for-2.6.30-20090620-v1.patch.lzma
-				${FILESDIR}/${PV}/0060_march-native.patch.lzma
-				${FILESDIR}/${PV}/1000_linux-2.6.30.1.patch.lzma
-				${FILESDIR}/${PV}/4100_dm-bbr.patch.lzma
-				${FILESDIR}/${PV}/4201_fbcondecor-0.9.6.patch.lzma
-				${FILESDIR}/${PV}/4400_alpha-sysctl-uac.patch.lzma
-				${FILESDIR}/${PV}/9990_coldnew-tag.patch.lzma
-				${FILESDIR}/${PV}/utf8-kernel-2.6-core-1.patch.lzma
-				${FILESDIR}/${PV}/utf8-kernel-2.6-fonts2.patch.lzma
-				${FILESDIR}/${PV}/utf8-kernel-2.6-fbcondecor-1.patch.lzma
-				"
+UNIPATCH_LIST=" ${DISTDIR}/coldnew-patches-2.6.30.tar.lzma"
 
 UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
-
+K_NOSETEXTRAVERSION="don't_set_it"
+K_EXTRAEWARN="This is for coldnew personal use, I won't take any responsibility
+for it"
+K_SECURITY_UNSUPPORTED="yes"
