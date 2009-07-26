@@ -25,5 +25,7 @@ UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
 K_NOSETEXTRAVERSION="don't_set_it"
 K_EXTRAEWARN="This is for coldnew personal use, I won't take any responsibility
-for it"
+for it
+
+PS:This version contains linuxdna's patches, you can compile it with Intel icc"
 K_SECURITY_UNSUPPORTED="yes"
