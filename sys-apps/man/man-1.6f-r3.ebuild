@@ -11,7 +11,7 @@ SRC_URI="http://primates.ximian.com/~flucifredi/man/${P}.tar.gz"
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="alpha amd64 arm hppa ia64 m68k ~mips ppc ppc64 s390 sh sparc ~sparc-fbsd x86 ~x86-fbsd"
-IUSE="lzma nls"
+IUSE="lzma nls xz"
 
 # drobbins - sys-apps/shadow is needed as a dependency simply because eutils'
 # group adding function needs the "groupadd" command in the shadow package. And
@@ -25,7 +25,8 @@ RDEPEND=">=sys-apps/groff-1.19.2-r1
 	!sys-apps/man-db
 	!app-arch/lzma
 	lzma? ( app-arch/lzma-utils )
-	sys-apps/shadow"
+	sys-apps/shadow
+	xz? ( app-arch/xz-utils )"
 PROVIDE="virtual/man"
 
 pkg_setup() {
@@ -74,11 +75,15 @@ src_compile() {
 	else
 		mylang="none"
 	fi
-	if use lzma; then
+
+	if use xz; then
+		mycompress=/usr/bin/xz
+	elif use lzma; then
 		mycompress=/usr/bin/lzma
 	else
 		mycompress=/bin/bzip2
 	fi
+
 	COMPRESS=$mycompress \
 	./configure \
 		-confdir=/etc \
