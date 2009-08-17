@@ -1,0 +1,221 @@
+diff -crB a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+*** a/arch/x86/boot/compressed/Makefile	2009-04-02 21:55:27.000000000 +0100
+--- b/arch/x86/boot/compressed/Makefile	2009-04-09 13:26:45.000000000 +0100
+***************
+*** 6,12 ****
+  
+  targets := vmlinux vmlinux.bin vmlinux.bin.gz head_$(BITS).o misc.o piggy.o
+  
+! KBUILD_CFLAGS := -m$(BITS) -D__KERNEL__ $(LINUX_INCLUDE) -O2
+  KBUILD_CFLAGS += -fno-strict-aliasing -fPIC
+  cflags-$(CONFIG_X86_64) := -mcmodel=small
+  KBUILD_CFLAGS += $(cflags-y)
+--- 6,12 ----
+  
+  targets := vmlinux vmlinux.bin vmlinux.bin.gz head_$(BITS).o misc.o piggy.o
+  
+! KBUILD_CFLAGS := -m$(BITS) -D__KERNEL__ $(LINUX_INCLUDE) -O0
+  KBUILD_CFLAGS += -fno-strict-aliasing -fPIC
+  cflags-$(CONFIG_X86_64) := -mcmodel=small
+  KBUILD_CFLAGS += $(cflags-y)
+diff -crB a/arch/x86/include/asm/delay.h b/arch/x86/include/asm/delay.h
+*** a/arch/x86/include/asm/delay.h	2009-04-02 21:55:27.000000000 +0100
+--- b/arch/x86/include/asm/delay.h	2009-04-09 13:49:10.000000000 +0100
+***************
+*** 8,15 ****
+   */
+  
+  /* Undefined functions to get compile-time errors */
+- extern void __bad_udelay(void);
+- extern void __bad_ndelay(void);
+  
+  extern void __udelay(unsigned long usecs);
+  extern void __ndelay(unsigned long nsecs);
+--- 8,13 ----
+***************
+*** 18,29 ****
+  
+  /* 0x10c7 is 2**32 / 1000000 (rounded up) */
+  #define udelay(n) (__builtin_constant_p(n) ? \
+! 	((n) > 20000 ? __bad_udelay() : __const_udelay((n) * 0x10c7ul)) : \
+  	__udelay(n))
+  
+  /* 0x5 is 2**32 / 1000000000 (rounded up) */
+  #define ndelay(n) (__builtin_constant_p(n) ? \
+! 	((n) > 20000 ? __bad_ndelay() : __const_udelay((n) * 5ul)) : \
+  	__ndelay(n))
+  
+  void use_tsc_delay(void);
+--- 16,27 ----
+  
+  /* 0x10c7 is 2**32 / 1000000 (rounded up) */
+  #define udelay(n) (__builtin_constant_p(n) ? \
+! 	( __const_udelay((n) * 0x10c7ul)) : \
+  	__udelay(n))
+  
+  /* 0x5 is 2**32 / 1000000000 (rounded up) */
+  #define ndelay(n) (__builtin_constant_p(n) ? \
+! 	( __const_udelay((n) * 5ul)) : \
+  	__ndelay(n))
+  
+  void use_tsc_delay(void);
+diff -crB a/arch/x86/kernel/apm_32.c b/arch/x86/kernel/apm_32.c
+*** a/arch/x86/kernel/apm_32.c	2009-04-02 21:55:27.000000000 +0100
+--- b/arch/x86/kernel/apm_32.c	2009-04-09 13:29:00.000000000 +0100
+***************
+*** 369,375 ****
+  /*
+   * Local variables
+   */
+! static struct {
+  	unsigned long	offset;
+  	unsigned short	segment;
+  } apm_bios_entry;
+--- 369,375 ----
+  /*
+   * Local variables
+   */
+! struct {
+  	unsigned long	offset;
+  	unsigned short	segment;
+  } apm_bios_entry;
+Only in linux: .config
+diff -crB a/drivers/hwmon/it87.c b/drivers/hwmon/it87.c
+*** a/drivers/hwmon/it87.c	2009-04-02 21:55:27.000000000 +0100
+--- b/drivers/hwmon/it87.c	2009-04-09 14:08:02.000000000 +0100
+***************
+*** 733,750 ****
+  show_fan_offset(2);
+  show_fan_offset(3);
+  
+! #define show_pwm_offset(offset)						\
+  static SENSOR_DEVICE_ATTR(pwm##offset##_enable, S_IRUGO | S_IWUSR,	\
+  		show_pwm_enable, set_pwm_enable, offset - 1);		\
+  static SENSOR_DEVICE_ATTR(pwm##offset, S_IRUGO | S_IWUSR,		\
+  		show_pwm, set_pwm, offset - 1);				\
+! static DEVICE_ATTR(pwm##offset##_freq,					\
+! 		(offset == 1 ? S_IRUGO | S_IWUSR : S_IRUGO),		\
+! 		show_pwm_freq, (offset == 1 ? set_pwm_freq : NULL));
+! 
+! show_pwm_offset(1);
+! show_pwm_offset(2);
+! show_pwm_offset(3);
+  
+  /* A different set of callbacks for 16-bit fans */
+  static ssize_t show_fan16(struct device *dev, struct device_attribute *attr,
+--- 733,754 ----
+  show_fan_offset(2);
+  show_fan_offset(3);
+  
+! #define show_pwm_offset1(offset);					\
+  static SENSOR_DEVICE_ATTR(pwm##offset##_enable, S_IRUGO | S_IWUSR,	\
+  		show_pwm_enable, set_pwm_enable, offset - 1);		\
+  static SENSOR_DEVICE_ATTR(pwm##offset, S_IRUGO | S_IWUSR,		\
+  		show_pwm, set_pwm, offset - 1);				\
+! static DEVICE_ATTR(pwm##offset##_freq,S_IRUGO,show_pwm_freq, NULL);
+! #define show_pwm_offset2(offset)                                        \
+! static SENSOR_DEVICE_ATTR(pwm##offset##_enable, S_IRUGO | S_IWUSR,      \
+!                 show_pwm_enable, set_pwm_enable, offset - 1);           \
+! static SENSOR_DEVICE_ATTR(pwm##offset, S_IRUGO | S_IWUSR,               \
+!                 show_pwm, set_pwm, offset - 1);                         \
+! static DEVICE_ATTR(pwm##offset##_freq,(S_IRUGO | S_IWUSR), show_pwm_freq, set_pwm_freq);
+! 
+! show_pwm_offset1(1);
+! show_pwm_offset2(2);
+! show_pwm_offset2(3);
+  
+  /* A different set of callbacks for 16-bit fans */
+  static ssize_t show_fan16(struct device *dev, struct device_attribute *attr,
+diff -crB a/drivers/pnp/pnpbios/bioscalls.c b/drivers/pnp/pnpbios/bioscalls.c
+*** a/drivers/pnp/pnpbios/bioscalls.c	2009-04-02 21:55:27.000000000 +0100
+--- b/drivers/pnp/pnpbios/bioscalls.c	2009-04-19 16:30:23.479771581 +0100
+***************
+*** 23,29 ****
+  
+  #include "pnpbios.h"
+  
+! static struct {
+  	u16 offset;
+  	u16 segment;
+  } pnp_bios_callpoint;
+--- 23,29 ----
+  
+  #include "pnpbios.h"
+  
+! struct {
+  	u16 offset;
+  	u16 segment;
+  } pnp_bios_callpoint;
+diff -crB a/include/b/compiler-intel.h linux/include/linux/compiler-intel.h
+*** a/include/b/compiler-intel.h	2009-04-02 21:55:27.000000000 +0100
+--- b/include/linux/compiler-intel.h	2009-04-09 13:23:52.000000000 +0100
+***************
+*** 29,31 ****
+--- 29,32 ----
+  #endif
+  
+  #define uninitialized_var(x) x
++ #undef __compiler_offsetof
+diff -crB a/include/b/module.h linux/include/linux/module.h
+*** a/include/b/module.h	2009-04-02 21:55:27.000000000 +0100
+--- b/include/linux/module.h	2009-04-09 13:29:52.000000000 +0100
+***************
+*** 179,185 ****
+   * generate a checksums for some symbols */
+  #define __CRC_SYMBOL(sym, sec)					\
+  	extern void *__crc_##sym __attribute__((weak));		\
+! 	static const unsigned long __kcrctab_##sym		\
+  	__used							\
+  	__attribute__((section("__kcrctab" sec), unused))	\
+  	= (unsigned long) &__crc_##sym;
+--- 179,185 ----
+   * generate a checksums for some symbols */
+  #define __CRC_SYMBOL(sym, sec)					\
+  	extern void *__crc_##sym __attribute__((weak));		\
+! 	const unsigned long __kcrctab_##sym		\
+  	__used							\
+  	__attribute__((section("__kcrctab" sec), unused))	\
+  	= (unsigned long) &__crc_##sym;
+***************
+*** 191,200 ****
+  #define __EXPORT_SYMBOL(sym, sec)				\
+  	extern typeof(sym) sym;					\
+  	__CRC_SYMBOL(sym, sec)					\
+! 	static const char __kstrtab_##sym[]			\
+  	__attribute__((section("__ksymtab_strings"), aligned(1))) \
+  	= MODULE_SYMBOL_PREFIX #sym;                    	\
+! 	static const struct kernel_symbol __ksymtab_##sym	\
+  	__used							\
+  	__attribute__((section("__ksymtab" sec), unused))	\
+  	= { (unsigned long)&sym, __kstrtab_##sym }
+--- 191,200 ----
+  #define __EXPORT_SYMBOL(sym, sec)				\
+  	extern typeof(sym) sym;					\
+  	__CRC_SYMBOL(sym, sec)					\
+! 	const char __kstrtab_##sym[]			\
+  	__attribute__((section("__ksymtab_strings"), aligned(1))) \
+  	= MODULE_SYMBOL_PREFIX #sym;                    	\
+! 	const struct kernel_symbol __ksymtab_##sym	\
+  	__used							\
+  	__attribute__((section("__ksymtab" sec), unused))	\
+  	= { (unsigned long)&sym, __kstrtab_##sym }
+diff -crB a/Makefile b/Makefile
+*** a/Makefile	2009-04-02 21:55:27.000000000 +0100
+--- b/Makefile	2009-04-09 13:26:12.000000000 +0100
+***************
+*** 693,699 ****
+  quiet_cmd_vmlinux__ ?= LD      $@
+        cmd_vmlinux__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux) -o $@ \
+        -T $(vmlinux-lds) $(vmlinux-init)                          \
+!       --start-group $(vmlinux-main) --end-group                  \
+        $(filter-out $(vmlinux-lds) $(vmlinux-init) $(vmlinux-main) vmlinux.o FORCE ,$^)
+  
+  # Generate new vmlinux version
+--- 693,699 ----
+  quiet_cmd_vmlinux__ ?= LD      $@
+        cmd_vmlinux__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux) -o $@ \
+        -T $(vmlinux-lds) $(vmlinux-init)                          \
+!       --start-group $(vmlinux-main) /opt/intel/Compiler/11.0/083/lib/ia32/libirc_s.a --end-group                  \
+        $(filter-out $(vmlinux-lds) $(vmlinux-init) $(vmlinux-main) vmlinux.o FORCE ,$^)
+  
+  # Generate new vmlinux version

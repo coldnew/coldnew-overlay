@@ -23,6 +23,12 @@ RDEPEND="!x11-misc/notification-daemon
 DEPEND="${RDEPEND}
 	dev-util/intltool"
 
+#src_unpack() {
+#	    unpack ${A}
+#		cd "${S}"
+#		epatch "${FILESDIR}"/fix_makefile.patch
+#}
+
 src_install() {
 	emake DESTDIR="${D}" install || die "installation failed"
 }

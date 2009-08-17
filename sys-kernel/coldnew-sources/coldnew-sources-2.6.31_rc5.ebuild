@@ -14,11 +14,11 @@ HOMEPAGE=""
 DESCRIPTION="Full sources including the Gentoo patchset and some other collected
 on Internet by coldnew for personaly use"
 
-SRC_URI="${KERNEL_URI}
-mirror://sourceforge/coldnew-overlay/coldnew-patches-${PV}.tar.lzma"
+SRC_URI="${KERNEL_URI}"
+#mirror://sourceforge/coldnew-overlay/coldnew-patches-${PV}.tar.lzma"
 
 
-UNIPATCH_LIST=" ${DISTDIR}/coldnew-patches-2.6.31_rc2.tar.lzma"
+#UNIPATCH_LIST=" ${DISTDIR}/coldnew-patches-${PV}.tar.lzma"
 
 UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
