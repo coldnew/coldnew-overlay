@@ -778,6 +778,7 @@ unipatch() {
 				 gz|Z|z) PIPE_CMD="gzip -dc";;
 				ZIP|zip) PIPE_CMD="unzip -p";;
 				   lzma) PIPE_CMD="lzma -dc";;
+				   xz) PIPE_CMD="unxz -dc";;
 				      *) UNIPATCH_DROP="${UNIPATCH_DROP} ${i/:*/}";;
 			esac
 

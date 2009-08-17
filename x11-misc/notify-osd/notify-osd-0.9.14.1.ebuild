@@ -28,6 +28,11 @@ DEPEND="${RDEPEND}
 #		cd "${S}"
 #		epatch "${FILESDIR}"/fix_makefile.patch
 #}
+src_configure() {
+#	append-flags -fno-strict-aliasing # -Werror causes build to fail
+	filter-flags -Werror
+#	default
+} 
 
 src_install() {
 	emake DESTDIR="${D}" install || die "installation failed"

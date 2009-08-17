@@ -16,10 +16,10 @@ HOMEPAGE=""
 DESCRIPTION="Full sources including the Gentoo patchset and some other stuff collected
 on  the Internet by coldnew for personaly use"
 
-SRC_URI="${KERNEL_URI}
-mirror://sourceforge/coldnew-overlay/coldnew-patches-${PVR}.tar.${COMPRESSTYPE}"
+SRC_URI="${KERNEL_URI}"
+#mirror://sourceforge/coldnew-overlay/coldnew-patches-${PVR}.tar.${COMPRESSTYPE}"
 
-UNIPATCH_LIST=" ${DISTDIR}/coldnew-patches-${PVR}.tar.${COMPRESSTYPE}"
+#UNIPATCH_LIST=" ${DISTDIR}/coldnew-patches-${PVR}.tar.${COMPRESSTYPE}"
 
 UNIPATCH_STRICTORDER="yes"
 K_PREPATCHED="yes"
