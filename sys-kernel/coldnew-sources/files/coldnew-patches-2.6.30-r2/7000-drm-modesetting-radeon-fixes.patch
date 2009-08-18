@@ -1,0 +1,170 @@
+diff --git a/drivers/gpu/drm/drm_page_alloc.c b/drivers/gpu/drm/drm_page_alloc.c
+index fad6ae3..73a3c6d 100644
+--- a/drivers/gpu/drm/drm_page_alloc.c
++++ b/drivers/gpu/drm/drm_page_alloc.c
+@@ -78,6 +78,7 @@ int drm_add_pages_locked(int num_pages, int cached)
+ #else
+ 			map_page_into_agp(page);
+ #endif
++			drm_clflush_pages(&page, 1);
+ 			list_add(&page->lru, &uncached_free_list);
+ 			drm_page_alloc_data.total_uncached_pages++;
+ 			drm_page_alloc_data.uncached_pages_in_list++;
+diff --git a/drivers/gpu/drm/drm_ttm.c b/drivers/gpu/drm/drm_ttm.c
+index ae64a83..dbc0cb3 100644
+--- a/drivers/gpu/drm/drm_ttm.c
++++ b/drivers/gpu/drm/drm_ttm.c
+@@ -89,21 +89,14 @@ static struct page *drm_ttm_alloc_page(struct drm_ttm *ttm, int cached)
+  * Change caching policy for the linear kernel map
+  * for range of pages in a ttm.
+  */
+-static int drm_ttm_set_caching(struct drm_ttm *ttm, int noncached, int alloc_cached)
++static int drm_ttm_set_caching(struct drm_ttm *ttm, int noncached)
+ {
+ 	int i;
+ 	struct page **cur_page;
+-	int ret;
+ 
+ 	if ((ttm->page_flags & DRM_TTM_PAGE_UNCACHED) == noncached)
+ 		return 0;
+ 
+-	{
+-		ret = drm_ttm_populate(ttm, alloc_cached);
+-		if (ret != 0)
+-			return ret;
+-	}
+-
+ 	if (noncached)
+ 		drm_clflush_pages(ttm->pages, ttm->num_pages);
+ 
+@@ -196,7 +189,7 @@ int drm_ttm_destroy(struct drm_ttm *ttm)
+ 	if (ttm->pages) {
+ 		if (ttm->page_flags & DRM_TTM_PAGE_USER) {
+ 			if (ttm->page_flags & DRM_TTM_PAGE_UNCACHED)
+-				drm_ttm_set_caching(ttm, 0, 0);
++				drm_ttm_set_caching(ttm, 0);
+ 
+ 			drm_ttm_free_user_pages(ttm);
+ 		} else
+@@ -404,7 +397,7 @@ void drm_ttm_fixup_caching(struct drm_ttm *ttm)
+ 		struct drm_ttm_backend *be = ttm->be;
+ 		if (be->func->needs_ub_cache_adjust(be))
+ 			if (ttm->page_flags & DRM_TTM_PAGE_ALLOC_CACHED)
+-				drm_ttm_set_caching(ttm, 0, 1);
++				drm_ttm_set_caching(ttm, 0);
+ 		ttm->state = ttm_unbound;
+ 	}
+ }
+@@ -452,7 +445,7 @@ int drm_ttm_bind(struct drm_ttm *ttm, struct drm_bo_mem_reg *bo_mem)
+ 	be = ttm->be;
+ 
+ 	if ((ttm->state == ttm_unbound || ttm->state == ttm_unpopulated) && !cached)
+-		drm_ttm_set_caching(ttm, DRM_TTM_PAGE_UNCACHED, cached);
++		drm_ttm_set_caching(ttm, DRM_TTM_PAGE_UNCACHED);
+ 	else if ((bo_mem->flags & DRM_BO_FLAG_CACHED_MAPPED) &&
+ 		   bo_driver->ttm_cache_flush)
+ 		bo_driver->ttm_cache_flush(ttm);
+diff --git a/drivers/gpu/drm/radeon/radeon_cp.c b/drivers/gpu/drm/radeon/radeon_cp.c
+index 179d408..2d18df9 100644
+--- a/drivers/gpu/drm/radeon/radeon_cp.c
++++ b/drivers/gpu/drm/radeon/radeon_cp.c
+@@ -2722,16 +2722,7 @@ int radeon_modeset_cp_resume(struct drm_device *dev)
+ 	drm_radeon_private_t *dev_priv = dev->dev_private;
+ 
+ 	radeon_do_wait_for_idle(dev_priv);
+-#if __OS_HAS_AGP
+-	if (dev_priv->flags & RADEON_IS_AGP) {
+-		/* Turn off PCI GART */
+-		radeon_set_pcigart(dev_priv, 0);
+-	} else
+-#endif
+-	{
+-		/* Turn on PCI GART */
+-		radeon_set_pcigart(dev_priv, 1);
+-	}
++	radeon_gart_start(dev);
+ 	radeon_gart_flush(dev);
+ 
+ 	radeon_cp_load_microcode(dev_priv);
+diff --git a/drivers/gpu/drm/radeon/radeon_drv.h b/drivers/gpu/drm/radeon/radeon_drv.h
+index e3498a4..6a69864 100644
+--- a/drivers/gpu/drm/radeon/radeon_drv.h
++++ b/drivers/gpu/drm/radeon/radeon_drv.h
+@@ -2253,6 +2253,7 @@ extern int radeon_init_mem_type(struct drm_device * dev, uint32_t type,
+ extern int radeon_move(struct drm_buffer_object * bo,
+ 		       int evict, int no_wait, struct drm_bo_mem_reg * new_mem);
+ 
++extern void radeon_gart_start(struct drm_device *drm);
+ extern void radeon_gart_flush(struct drm_device *dev);
+ extern uint64_t radeon_evict_flags(struct drm_buffer_object *bo);
+ 
+@@ -2330,6 +2331,7 @@ struct drm_gem_object *radeon_gem_object_alloc(struct drm_device *dev, int size,
+ 					       int initial_domain, bool discardable);
+ int radeon_modeset_init(struct drm_device *dev);
+ void radeon_modeset_cleanup(struct drm_device *dev);
++int radeon_modeset_agp_init(struct drm_device *dev);
+ extern u32 RADEON_READ_MCIND(drm_radeon_private_t *dev_priv, int addr);
+ void radeon_read_agp_location(drm_radeon_private_t *dev_priv, u32 *agp_lo, u32 *agp_hi);
+ void radeon_write_fb_location(drm_radeon_private_t *dev_priv, u32 fb_loc);
+diff --git a/drivers/gpu/drm/radeon/radeon_gem.c b/drivers/gpu/drm/radeon/radeon_gem.c
+index cb96470..4bfc316 100644
+--- a/drivers/gpu/drm/radeon/radeon_gem.c
++++ b/drivers/gpu/drm/radeon/radeon_gem.c
+@@ -563,8 +563,16 @@ static int radeon_gart_init(struct drm_device *dev)
+ 		dev_priv->gart_info.addr = dev_priv->gart_info.table_handle->vaddr;
+ 		dev_priv->gart_info.bus_addr = dev_priv->gart_info.table_handle->busaddr;
+ 	}
++
++	radeon_gart_start(dev);
+ 	
+-	/* gart values setup - start the GART */
++	return 0;
++}
++
++/* gart values setup - start the GART */
++void radeon_gart_start(struct drm_device *dev) {
++	drm_radeon_private_t *dev_priv = dev->dev_private;
++
+ 	if (dev_priv->flags & RADEON_IS_AGP) {
+ 		radeon_set_pcigart(dev_priv, 0);
+ 		/* enable AGP GART bits */
+@@ -581,8 +589,6 @@ static int radeon_gart_init(struct drm_device *dev)
+ 	} else {
+ 		radeon_set_pcigart(dev_priv, 1);
+ 	}
+-		
+-	return 0;
+ }
+ 
+ int radeon_alloc_gart_objects(struct drm_device *dev)
+@@ -1024,10 +1030,12 @@ int radeon_modeset_agp_init(struct drm_device *dev)
+ 	struct radeon_agpmode_quirk *p = radeon_agpmode_quirk_list;
+ 
+ 	/* Acquire AGP. */
+-	ret = drm_agp_acquire(dev);
+-	if (ret) {
+-		DRM_ERROR("Unable to acquire AGP: %d\n", ret);
+-		return ret;
++	if (!dev->agp->acquired) { /* don't need to repeat on resume */
++		ret = drm_agp_acquire(dev);
++		if (ret) {
++			DRM_ERROR("Unable to acquire AGP: %d\n", ret);
++			return ret;
++		}
+ 	}
+ 
+ 	ret = drm_agp_info(dev, &info);
+diff --git a/drivers/gpu/drm/radeon/radeon_pm.c b/drivers/gpu/drm/radeon/radeon_pm.c
+index 5a57056..684b7ca 100644
+--- a/drivers/gpu/drm/radeon/radeon_pm.c
++++ b/drivers/gpu/drm/radeon/radeon_pm.c
+@@ -156,6 +156,9 @@ int radeon_resume(struct drm_device *dev)
+ 	/* Turn on bus mastering -todo fix properly */
+ 	radeon_enable_bm(dev_priv);
+ 
++	if (dev_priv->flags & RADEON_IS_AGP)
++		radeon_modeset_agp_init(dev);
++
+ 	if (dev_priv->flags & RADEON_IS_PCIE) {
+ 		memcpy_toio(dev_priv->mm.pcie_table.kmap.virtual, dev_priv->mm.pcie_table_backup, dev_priv->gart_info.table_size);
+ 	}

@@ -1,0 +1,58 @@
+From: Julia Lawall <julia@diku.dk>
+Date: Sun, 19 Jul 2009 15:26:13 +0000 (+0200)
+Subject: HID: Move dereferences below a NULL test
+X-Git-Tag: v2.6.31-rc4~14^2
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=76c317d6e5cb7f58541879006d39774596962715
+
+HID: Move dereferences below a NULL test
+
+If the NULL test is necessary, then the dereferences should be moved below
+the NULL test.
+
+The semantic patch that makes this change is as follows:
+(http://www.emn.fr/x-info/coccinelle/)
+
+// <smpl>
+@@
+type T;
+expression E,E1;
+identifier i,fld;
+statement S;
+@@
+
+- T i = E->fld;
++ T i;
+  ... when != E=E1
+      when != i
+  if (E == NULL||...) S
++ i = E->fld;
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+
+diff --git a/drivers/hid/hid-core.c b/drivers/hid/hid-core.c
+index f2c21d5..5eb10c2 100644
+--- a/drivers/hid/hid-core.c
++++ b/drivers/hid/hid-core.c
+@@ -1075,14 +1075,16 @@ EXPORT_SYMBOL_GPL(hid_report_raw_event);
+  */
+ int hid_input_report(struct hid_device *hid, int type, u8 *data, int size, int interrupt)
+ {
+-	struct hid_report_enum *report_enum = hid->report_enum + type;
+-	struct hid_driver *hdrv = hid->driver;
++	struct hid_report_enum *report_enum;
++	struct hid_driver *hdrv;
+ 	struct hid_report *report;
+ 	unsigned int i;
+ 	int ret;
+ 
+ 	if (!hid || !hid->driver)
+ 		return -ENODEV;
++	report_enum = hid->report_enum + type;
++	hdrv = hid->driver;
+ 
+ 	if (!size) {
+ 		dbg_hid("empty report\n");
+

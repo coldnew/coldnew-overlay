@@ -1,0 +1,49 @@
+From: Borislav Petkov <petkovbb@gmail.com>
+Date: Fri, 26 Jun 2009 18:22:37 +0000 (-0700)
+Subject: ide-cd: handle fragmented packet commands gracefully
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=9c72ebef5aabf3532469d602a9d87beceea268b1
+
+ide-cd: handle fragmented packet commands gracefully
+
+There are some devices in the wild that clear the DRQ bit during the
+last word of a packet command and therefore could use a "second chance"
+for that last word of data to be xferred instead of simply failing the
+request. Do that by attempting to suck in those last bytes in PIO mode.
+
+In addition, the ATA_ERR bit has to be cleared for we cannot be sure the
+data is valid otherwise.
+
+See http://bugzilla.kernel.org/show_bug.cgi?id=13399 for details.
+
+Signed-off-by: Borislav Petkov <petkovbb@gmail.com>
+Acked-by: Bartlomiej Zolnierkiewicz <bzolnier@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+diff --git a/drivers/ide/ide-cd.c b/drivers/ide/ide-cd.c
+index f0ede59..6a9a769 100644
+--- a/drivers/ide/ide-cd.c
++++ b/drivers/ide/ide-cd.c
+@@ -592,9 +592,19 @@ static ide_startstop_t cdrom_newpc_intr(ide_drive_t *drive)
+ 			}
+ 		} else if (!blk_pc_request(rq)) {
+ 			ide_cd_request_sense_fixup(drive, cmd);
+-			/* complain if we still have data left to transfer */
++
+ 			uptodate = cmd->nleft ? 0 : 1;
+-			if (uptodate == 0)
++
++			/*
++			 * suck out the remaining bytes from the drive in an
++			 * attempt to complete the data xfer. (see BZ#13399)
++			 */
++			if (!(stat & ATA_ERR) && !uptodate && thislen) {
++				ide_pio_bytes(drive, cmd, write, thislen);
++				uptodate = cmd->nleft ? 0 : 1;
++			}
++
++			if (!uptodate)
+ 				rq->cmd_flags |= REQ_FAILED;
+ 		}
+ 		goto out_end;
+
