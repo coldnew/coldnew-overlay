@@ -1,3 +1,2 @@
-#=sys-kernel/coldnew-sources-2.6.30-r1
-=sys-kernel/coldnew-sources-2.6.31_rc2
-=sys-apps/openrc-0.5.0
+=sys-kernel/coldnew-sources-2.6.31_rc6
+=x11-base/xorg-server-9999.ebuild
