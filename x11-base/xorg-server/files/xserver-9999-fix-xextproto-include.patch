@@ -1,0 +1,16 @@
+xextproto-1.9.99.3 moved shape.h to shapeproto.h
+
+http://cgit.freedesktop.org/xorg/proto/xextproto/commit/?id=35ec2669091197a4e5b3c56d79ea26ae87759b16
+
+--
+--- a/hw/xnest/Xnest.h
++++ b/hw/xnest/Xnest.h
+@@ -66,7 +66,7 @@ typedef XID KeySym64;
+ #define GC XlibGC
+ #include <X11/Xlib.h>
+ #include <X11/Xutil.h>
+-#include <X11/extensions/shape.h>
++#include <X11/extensions/shapeproto.h>
+ #undef GC
+ 
+ #ifdef _XSERVER64_tmp

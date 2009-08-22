@@ -1,0 +1,4288 @@
+diff --git a/src/r600_exa.c b/src/r600_exa.c
+index 86da7af..5caf2b6 100644
+--- a/src/r600_exa.c
++++ b/src/r600_exa.c
+@@ -39,6 +39,17 @@
+ #include "r600_reg.h"
+ #include "r600_state.h"
+ 
++#include "xf86drm.h"
++/* Workaround for header mismatches */
++#ifndef DEPRECATED
++# define DEPRECATED __attribute__ ((deprecated))
++# define __user
++#endif
++#include "radeon_drm.h"
++
++
++
++
+ /* #define SHOW_VERTEXES */
+ 
+ #       define RADEON_ROP3_ZERO             0x00000000
+@@ -89,163 +100,467 @@ R600PrepareSolid(PixmapPtr pPix, int alu, Pixel pm, Pixel fg)
+     ScrnInfoPtr pScrn = xf86Screens[pPix->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+-    cb_config_t     cb_conf;
+-    shader_config_t vs_conf, ps_conf;
++/*    cb_config_t     cb_conf; */
++/*    shader_config_t vs_conf, ps_conf; */
+     int pmask = 0;
+     uint32_t a, r, g, b;
+-    float ps_alu_consts[4];
++/*    float ps_alu_consts[4];*/
++int x;
++/*uint32_t *ib_head;*/
++
++union { float f; uint32_t d; } *ib_head;
++
++    x = exaGetPixmapPitch(pPix);
++    accel_state->dst_size = x * pPix->drawable.height;
++    accel_state->dst_pitch = x / (pPix->drawable.bitsPerPixel / 8);
+ 
+     accel_state->dst_mc_addr = exaGetPixmapOffset(pPix) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
+-    accel_state->dst_size = exaGetPixmapPitch(pPix) * pPix->drawable.height;
+-    accel_state->dst_pitch = exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel / 8);
++/*    accel_state->dst_size = exaGetPixmapPitch(pPix) * pPix->drawable.height;
++    accel_state->dst_pitch = exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel / 8); 
++*/
+ 
+     /* bad pitch */
+     if (accel_state->dst_pitch & 7)
+-	return FALSE;
++        return FALSE;
+ 
+     /* bad offset */
+     if (accel_state->dst_mc_addr & 0xff)
+-	return FALSE;
++        return FALSE;
+ 
+     if (pPix->drawable.bitsPerPixel == 24)
+-	return FALSE;
++        return FALSE;
+ 
+-    CLEAR (cb_conf);
+-    CLEAR (vs_conf);
+-    CLEAR (ps_conf);
++/*    CLEAR (cb_conf); */
++/*    CLEAR (vs_conf); */
++/*    CLEAR (ps_conf); */
+ 
+     /* return FALSE; */
+ 
+ #ifdef SHOW_VERTEXES
+     ErrorF("%dx%d @ %dbpp, 0x%08x\n", pPix->drawable.width, pPix->drawable.height,
+-	   pPix->drawable.bitsPerPixel, exaGetPixmapPitch(pPix));
++           pPix->drawable.bitsPerPixel, exaGetPixmapPitch(pPix));
+ #endif
+ 
+     accel_state->ib = RHDDRMCPBuffer(pScrn->scrnIndex);
+ 
+-    /* Init */
+-    start_3d(pScrn, accel_state->ib);
+ 
+     /* cp_set_surface_sync(pScrn, accel_state->ib); */
+ 
+-    set_default_state(pScrn, accel_state->ib);
++
++      ib_head = (pointer)(char*)(accel_state->ib)->address;
++      x = (accel_state->ib)->used>>2;
++
++      if (rhdPtr->ChipSet < RHD_RV770) { 
++/*      PACK3(ib, IT_START_3D_CMDBUF, 1);
++        E32(ib, 0); */
++
++        ib_head[x].d = RADEON_CP_PACKET3 | (IT_START_3D_CMDBUF << 8);
++        ib_head[x+1].d = 0x00000000;
++        x+=2;
++        (accel_state->ib)->used += 8;
++      }
++
++
++/*    PACK3(ib, IT_CONTEXT_CONTROL, 2);
++    E32(ib, 0x80000000);
++    E32(ib, 0x80000000); */
++
++      ib_head[x].d = RADEON_CP_PACKET3 | (0x0001 << 16) | (IT_CONTEXT_CONTROL << 8);
++      ib_head[x+1].d = 0x80000000;
++      ib_head[x+2].d = 0x80000000;
++/*    ib->used += 12; */
++
++
++
++/*    wait_3d_idle_clean (pScrn, ib); */
++
++      ib_head[x+3].d = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++      ib_head[x+4].d =  CACHE_FLUSH_AND_INV_EVENT;
++      ib_head[x+5].d = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++      ib_head[x+6].d =  0x10;
++      ib_head[x+7].d =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++
++    if (!accel_state->XHas3DEngineState){
++          /* Init */
++         (accel_state->ib)->used += 32;
++          set_default_state(pScrn, accel_state->ib);
++/*          ib_head = (pointer)(char*)(accel_state->ib)->address; */
++          x = ((accel_state->ib)->used>>2) - 8;
++         (accel_state->ib)->used -= 32;
++    }
+ 
+     /* Scissor / viewport */
+-    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
+-    EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit);
++/*    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
++    EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit); */
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+8].d = RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+9].d = ( PA_CL_VTE_CNTL - 0x28000) >> 2;
++    ib_head[x+10].d =  VTX_XY_FMT_bit;
++    ib_head[x+11].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+12].d= ( PA_CL_CLIP_CNTL - 0x28000) >> 2;
++    ib_head[x+13].d= CLIP_DISABLE_bit;
++/*    (accel_state->ib)->used += 24; */
+ 
+     accel_state->vs_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	accel_state->solid_vs_offset;
++        accel_state->solid_vs_offset;
+     accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	accel_state->solid_ps_offset;
++        accel_state->solid_ps_offset;
++
+     accel_state->vs_size = 512;
+     accel_state->ps_size = 512;
+ 
+     /* Shader */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->vs_size, accel_state->vs_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->vs_size, accel_state->vs_mc_addr); */
++
++/*    x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+14].d = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+15].d = SH_ACTION_ENA_bit;
++    ib_head[x+16].d = (512 + 255)>> 8;
++    ib_head[x+17].d = accel_state->vs_mc_addr >> 8;
++    ib_head[x+18].d = 10;
++/*    (accel_state->ib)->used += 44; */
+ 
+-    vs_conf.shader_addr         = accel_state->vs_mc_addr;
++
++
++/*    vs_conf.shader_addr         = accel_state->vs_mc_addr;
+     vs_conf.num_gprs            = 2;
+     vs_conf.stack_size          = 0;
+-    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++
++    vs_conf.dx10_clamp          = 0;
++    vs_conf.prime_cache_pgm_en  = 0;
++    vs_conf.prime_cache_on_draw = 0;
++    vs_conf.fetch_cache_lines   = 0;
++    vs_conf.prime_cache_en      = 0;
++    vs_conf.prime_cache_on_const= 0;
++    vs_conf.clamp_consts        = 0;
++    vs_conf.export_mode         = 0;
++    vs_conf.uncached_first_inst = 0; */
++
++
++/*    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++*/
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++    ib_head[x+19].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+20].d= (SQ_PGM_START_VS - 0x28000) >> 2;
++    ib_head[x+21].d= accel_state->vs_mc_addr >> 8;
++    ib_head[x+22].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+23].d= (SQ_PGM_RESOURCES_VS - 0x28000) >> 2;
++    ib_head[x+24].d= (2 << NUM_GPRS_shift);
++    ib_head[x+25].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+26].d= (SQ_PGM_CF_OFFSET_VS - 0x28000) >> 2;
++    ib_head[x+27].d= 0;
++/*    (accel_state->ib)->used += 36; */
++
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->ps_size, accel_state->ps_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->ps_size, accel_state->ps_mc_addr); */
++
++
++/*    x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+28].d = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+29].d = SH_ACTION_ENA_bit;
++    ib_head[x+30].d = (512 + 255)>> 8;
++    ib_head[x+31].d = accel_state->ps_mc_addr >> 8;
++    ib_head[x+32].d = 10;
++/*    (accel_state->ib)->used += 100; */
+ 
+-    ps_conf.shader_addr         = accel_state->ps_mc_addr;
++
++/*    ps_conf.shader_addr         = accel_state->ps_mc_addr;
+     ps_conf.num_gprs            = 1;
+     ps_conf.stack_size          = 0;
+-    ps_conf.uncached_first_inst = 1;
++    ps_conf.dx10_clamp          = 0;
++    ps_conf.prime_cache_pgm_en  = 0;
++    ps_conf.prime_cache_on_draw = 0;
++    ps_conf.fetch_cache_lines   = 0;
++    ps_conf.prime_cache_en      = 0;
++    ps_conf.prime_cache_on_const= 0;
+     ps_conf.clamp_consts        = 0;
+     ps_conf.export_mode         = 2;
+-    ps_setup                    (pScrn, accel_state->ib, &ps_conf);
++    ps_conf.uncached_first_inst = 1; */
++
++
++
++/*    ps_setup                    (pScrn, accel_state->ib, &ps_conf); */
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++
++
++    ib_head[x+33].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+34].d= (SQ_PGM_START_PS - 0x28000) >> 2;
++    ib_head[x+35].d= accel_state->ps_mc_addr >> 8;
++    ib_head[x+36].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+37].d= (SQ_PGM_RESOURCES_PS - 0x28000) >> 2;
++    ib_head[x+38].d= (1 << NUM_GPRS_shift) | UNCACHED_FIRST_INST_bit;
++    ib_head[x+39].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+40].d= (SQ_PGM_EXPORTS_PS - 0x28000) >> 2;
++    ib_head[x+41].d= 2;
++    ib_head[x+42].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+43].d= (SQ_PGM_CF_OFFSET_PS - 0x28000) >> 2;
++    ib_head[x+44].d= 0;
++
++
++/*    (accel_state->ib)->used += 48;
++*/
++
+ 
+     /* Render setup */
+     if (pm & 0x000000ff)
+-	pmask |= 4; /* B */
++        pmask |= 4;  /* B */
+     if (pm & 0x0000ff00)
+-	pmask |= 2; /* G */
++        pmask |= 2;  /* G */
+     if (pm & 0x00ff0000)
+-	pmask |= 1; /* R */
++        pmask |= 1;  /* R */
+     if (pm & 0xff000000)
+-	pmask |= 8; /* A */
+-    EREG(accel_state->ib, CB_SHADER_MASK,                      (pmask << OUTPUT0_ENABLE_shift));
++        pmask |= 8;  /* A */
++
++/*    EREG(accel_state->ib, CB_SHADER_MASK,                      (pmask << OUTPUT0_ENABLE_shift));
+     EREG(accel_state->ib, R7xx_CB_SHADER_CONTROL,              (RT0_ENABLE_bit));
+-    EREG(accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[alu]);
++    EREG(accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[alu]); */
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+45].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+46].d= ( CB_SHADER_MASK - 0x28000) >> 2;
++    ib_head[x+47].d=  (pmask << OUTPUT0_ENABLE_shift);
++    ib_head[x+48].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+49].d= ( R7xx_CB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+50].d= RT0_ENABLE_bit;
++    ib_head[x+51].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+52].d= ( CB_COLOR_CONTROL - 0x28000) >> 2;
++    ib_head[x+53].d= RADEON_ROP[alu];
++/*    (accel_state->ib)->used += 184; */
++
+ 
+ 
+-    cb_conf.id = 0;
++/*    cb_conf.id = 0;
+     cb_conf.w = accel_state->dst_pitch;
+     cb_conf.h = pPix->drawable.height;
+     cb_conf.base = accel_state->dst_mc_addr;
+ 
+     if (pPix->drawable.bitsPerPixel == 8) {
+-	cb_conf.format = COLOR_8;
+-	cb_conf.comp_swap = 3; /* A */
+-    } else if (pPix->drawable.bitsPerPixel == 16) {
+-	cb_conf.format = COLOR_5_6_5;
+-	cb_conf.comp_swap = 2; /* RGB */
+-    } else {
+-	cb_conf.format = COLOR_8_8_8_8;
+-	cb_conf.comp_swap = 1; /* ARGB */
+-    }
++        cb_conf.format = COLOR_8;
++        cb_conf.comp_swap = 3; */ /* A */
++/*    } else if (pPix->drawable.bitsPerPixel == 16) {
++        cb_conf.format = COLOR_5_6_5;
++        cb_conf.comp_swap = 2; */ /* RGB */
++/*    } else {
++        cb_conf.format = COLOR_8_8_8_8;
++        cb_conf.comp_swap = 1; */ /* ARGB */
++/*    }
+     cb_conf.source_format = 1;
+     cb_conf.blend_clamp = 1;
+     set_render_target(pScrn, accel_state->ib, &cb_conf);
++*/
++
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+54].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+55].d= (CB_COLOR0_BASE  - 0x28000) >> 2;
++    ib_head[x+56].d= (accel_state->dst_mc_addr >> 8);
++
++    // rv6xx workaround
++    if ((rhdPtr->ChipSet > RHD_R600) &&
++        (rhdPtr->ChipSet < RHD_RV770)) { 
++/*      PACK3(ib, IT_SURFACE_BASE_UPDATE, 1);
++        E32(ib, (2 << cb_conf->id)); */
++        ib_head[x+57].d= RADEON_CP_PACKET3 | (IT_SURFACE_BASE_UPDATE << 8);
++        ib_head[x+58].d= 2;
++        x+=2;
++       (accel_state->ib)->used += 8;
++    }
++
++    ib_head[x+57].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+58].d= (CB_COLOR0_SIZE - 0x28000) >> 2;
++    ib_head[x+59].d= ((((accel_state->dst_pitch/8) - 1) << PITCH_TILE_MAX_shift)     |
++                   ((accel_state->dst_pitch * ((pPix->drawable.height + 7)& ~7)) << SLICE_TILE_MAX_shift));
++
++    ib_head[x+60].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+61].d= (CB_COLOR0_VIEW - 0x28000) >> 2;
++    ib_head[x+62].d= 0;
++
++    ib_head[x+63].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+64].d= (CB_COLOR0_INFO - 0x28000) >> 2;
++
++
++    if (pPix->drawable.bitsPerPixel == 8) {
++       ib_head[x+65].d= ((COLOR_8        << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (3   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    } else if (pPix->drawable.bitsPerPixel == 16) {
++       ib_head[x+65].d= ((COLOR_5_6_5    << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (2   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    } else {
++       ib_head[x+65].d= ((COLOR_8_8_8_8  << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (1   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    }
++    ib_head[x+66].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+67].d= (CB_COLOR0_TILE - 0x28000) >> 2;
++    ib_head[x+68].d= 0;
++
++    ib_head[x+69].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+70].d= (CB_COLOR0_FRAG - 0x28000) >> 2;
++    ib_head[x+71].d= 0;
++
++    ib_head[x+72].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+73].d= (CB_COLOR0_MASK - 0x28000) >> 2;
++    ib_head[x+74].d= 0;
++/*    (accel_state->ib)->used += 84; */
++
++
++/*    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit                      |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
++    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)            | */ /* EARLY_Z_THEN_LATE_Z */
++/*                                                              DUAL_EXPORT_ENABLE_bit)); */ /* Only useful if no depth export */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+75].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+76].d= ( PA_SU_SC_MODE_CNTL - 0x28000) >> 2;
++    ib_head[x+77].d=  (FACE_bit                        |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift));
++
++    ib_head[x+78].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+79].d= (DB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+80].d= ((1 << Z_ORDER_shift)            | /* EARLY_Z_THEN_LATE_Z */
++                  DUAL_EXPORT_ENABLE_bit);
++
+ 
+-    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit			|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)	|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
+-    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)		| /* EARLY_Z_THEN_LATE_Z */
+-								DUAL_EXPORT_ENABLE_bit)); /* Only useful if no depth export */
+ 
+     /* Interpolator setup */
+     /* one unused export from VS (VS_EXPORT_COUNT is zero based, count minus one) */
+-    EREG(accel_state->ib, SPI_VS_OUT_CONFIG, (0 << VS_EXPORT_COUNT_shift));
++/*    EREG(accel_state->ib, SPI_VS_OUT_CONFIG, (0 << VS_EXPORT_COUNT_shift));
+     EREG(accel_state->ib, SPI_VS_OUT_ID_0, (0 << SEMANTIC_0_shift));
++*/
++
++    ib_head[x+81].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+82].d= ( SPI_VS_OUT_CONFIG - 0x28000) >> 2;
++    ib_head[x+83].d= (0 << VS_EXPORT_COUNT_shift);
++
++    ib_head[x+84].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+85].d= ( SPI_VS_OUT_ID_0 - 0x28000) >> 2;
++    ib_head[x+86].d= (0 << SEMANTIC_0_shift);
++
++
+ 
+     /* Enabling flat shading needs both FLAT_SHADE_bit in SPI_PS_INPUT_CNTL_x
+      * *and* FLAT_SHADE_ENA_bit in SPI_INTERP_CONTROL_0 */
+     /* no VS exports as PS input (NUM_INTERP is not zero based, no minus one) */
+-    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 (0 << NUM_INTERP_shift));
++/*    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 (0 << NUM_INTERP_shift));
+     EREG(accel_state->ib, SPI_PS_IN_CONTROL_1,                 0);
++*/
+     /* color semantic id 0 -> GPR[0] */
+-    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)	|
+-								(0x03 << DEFAULT_VAL_shift)	|
+-								FLAT_SHADE_bit		|
+-								SEL_CENTROID_bit));
++/*    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)      |
++                                                                (0x03 << DEFAULT_VAL_shift)     |
++                                                                FLAT_SHADE_bit          |
++                                                                SEL_CENTROID_bit));
+     EREG(accel_state->ib, SPI_INTERP_CONTROL_0,                FLAT_SHADE_ENA_bit | 0);
++*/
++
++    ib_head[x+87].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+88].d= ( SPI_PS_IN_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+89].d= (0 << NUM_INTERP_shift);
++
++    ib_head[x+90].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+91].d= (SPI_PS_IN_CONTROL_1 - 0x28000) >> 2;
++    ib_head[x+92].d= 0;
++
++    ib_head[x+93].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+94].d= ( SPI_PS_INPUT_CNTL_0  - 0x28000) >> 2;
++    ib_head[x+95].d=  ((0    << SEMANTIC_shift)      |
++                    (0x03 << DEFAULT_VAL_shift)     |
++                     FLAT_SHADE_bit | SEL_CENTROID_bit);
++
++    ib_head[x+96].d= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+97].d= (SPI_INTERP_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+98].d= FLAT_SHADE_ENA_bit;
++
++
++/*    (accel_state->ib)->used += 364; */
++
++
++    ib_head[x+99].d = RADEON_CP_PACKET3 | (IT_SET_ALU_CONST << 8) | 4 <<16;
++    ib_head[x+100].d = (SQ_ALU_CONSTANT - SET_ALU_CONST_offset ) >> 2;
++
++
+ 
+     /* PS alu constants */
+     if (pPix->drawable.bitsPerPixel == 16) {
+-	r = (fg >> 11) & 0x1f;
+-	g = (fg >> 5) & 0x3f;
+-	b = (fg >> 0) & 0x1f;
+-	ps_alu_consts[0] = (float)r / 31; /* R */
+-	ps_alu_consts[1] = (float)g / 63; /* G */
+-	ps_alu_consts[2] = (float)b / 31; /* B */
+-	ps_alu_consts[3] = 1.0; /* A */
++        r = (fg >> 11) & 0x1f;
++        g = (fg >> 5) & 0x3f;
++        b = (fg >> 0) & 0x1f;
++/*      ps_alu_consts[0] = (float)r / 31;*/ /* R */
++/*      ps_alu_consts[1] = (float)g / 63;*/ /* G */
++/*      ps_alu_consts[2] = (float)b / 31;*/ /* B */
++/*      ps_alu_consts[3] = 1.0;*/ /* A */
++        ib_head[x+101].f =((float)r / 31); /* R */
++        ib_head[x+102].f =((float)g / 63); /* G */
++        ib_head[x+103].f =((float)b / 31); /* B */
++        ib_head[x+104].f = 1.0; /* A */
++
+     } else if (pPix->drawable.bitsPerPixel == 8) {
+-	a = (fg >> 0) & 0xff;
+-	ps_alu_consts[0] = 0.0; /* R */
+-	ps_alu_consts[1] = 0.0; /* G */
+-	ps_alu_consts[2] = 0.0; /* B */
+-	ps_alu_consts[3] = (float)a / 255; /* A */
++        a = (fg >> 0) & 0xff;
++/*      ps_alu_consts[0] = 0.0;*/ /* R */
++/*      ps_alu_consts[1] = 0.0;*/ /* G */
++/*      ps_alu_consts[2] = 0.0;*/ /* B */
++/*      ps_alu_consts[3] = (float)a / 255;*/ /* A */
++        ib_head[x+101].f = 0.0;
++        ib_head[x+102].f = 0.0;
++        ib_head[x+103].f = 0.0;
++        ib_head[x+104].f = ((float)a / 255); /* A */
++
+     } else {
+-	a = (fg >> 24) & 0xff;
+-	r = (fg >> 16) & 0xff;
+-	g = (fg >> 8) & 0xff;
+-	b = (fg >> 0) & 0xff;
+-	ps_alu_consts[0] = (float)r / 255; /* R */
+-	ps_alu_consts[1] = (float)g / 255; /* G */
+-	ps_alu_consts[2] = (float)b / 255; /* B */
+-	ps_alu_consts[3] = (float)a / 255; /* A */
++        a = (fg >> 24) & 0xff;
++        r = (fg >> 16) & 0xff;
++        g = (fg >> 8) & 0xff;
++        b = (fg >> 0) & 0xff;
++/*      ps_alu_consts[0] = (float)r / 255;*/ /* R */
++/*      ps_alu_consts[1] = (float)g / 255;*/ /* G */
++/*      ps_alu_consts[2] = (float)b / 255;*/ /* B */
++/*      ps_alu_consts[3] = (float)a / 255;*/ /* A */
++        ib_head[x+101].f = ((float)r / 255); /* R */
++        ib_head[x+102].f = ((float)g / 255); /* G */
++        ib_head[x+103].f = ((float)b / 255); /* B */
++        ib_head[x+104].f = ((float)a / 255); /* A */
++    (accel_state->ib)->used += 420;
++
++
++    accel_state->vb_index = 0;
++
++#ifdef SHOW_VERTEXES
++    ErrorF("PM: 0x%08x\n", pm);
++#endif
++
++    return TRUE;
+     }
+-    set_alu_consts(pScrn, accel_state->ib, 0, sizeof(ps_alu_consts) / SQ_ALU_CONSTANT_offset, ps_alu_consts);
++/*    set_alu_consts(pScrn, accel_state->ib, 0, sizeof(ps_alu_consts) / SQ_ALU_CONSTANT_offset, ps_alu_consts);
++*/
++
++/*    ib_head[x+91] = RADEON_CP_PACKET3 | (IT_SET_ALU_CONST << 8) | 4 <<16;
++    ib_head[x+92] = (SQ_ALU_CONSTANT - SET_ALU_CONST_offset ) >> 2;
++    ib_head[x+93] = ps_alu_const_as_ints[0];
++    ib_head[x+94] = ps_alu_const_as_ints[1];
++    ib_head[x+95] = ps_alu_const_as_ints[2];
++    ib_head[x+96] = ps_alu_const_as_ints[3]; */
++
++
++
++    (accel_state->ib)->used += 420;
++
+ 
+     accel_state->vb_index = 0;
+ 
+@@ -275,14 +590,14 @@ R600Solid(PixmapPtr pPix, int x1, int y1, int x2, int y2)
+ 		   (accel_state->ib->total / 2) +
+ 		   accel_state->vb_index * 8);
+ 
+-    vb[0] = (float)x1;
++    vb[2] = vb[0] = (float)x1;
+     vb[1] = (float)y1;
+ 
+-    vb[2] = (float)x1;
+-    vb[3] = (float)y2;
++/*    vb[2] = (float)x1; */
++    vb[5] = vb[3] = (float)y2;
+ 
+     vb[4] = (float)x2;
+-    vb[5] = (float)y2;
++/*    vb[5] = (float)y2; */
+ 
+     accel_state->vb_index += 3;
+ 
+@@ -294,123 +609,342 @@ R600DoneSolid(PixmapPtr pPix)
+     ScrnInfoPtr pScrn = xf86Screens[pPix->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+-    draw_config_t   draw_conf;
+-    vtx_resource_t  vtx_res;
++/*    draw_config_t   draw_conf; */
++/*    vtx_resource_t  vtx_res; */
++int x;
++uint32_t *ib_head;
++    int                start  = 0;
++    drm_radeon_indirect_t  indirect;
++    int drmFD = RHDDRMFDGet(pScrn->scrnIndex);
+ 
+-    CLEAR (draw_conf);
+-    CLEAR (vtx_res);
++/*    CLEAR (draw_conf); */
++/*    CLEAR (vtx_res); */
+ 
+     if (accel_state->vb_index == 0) {
+-	R600IBDiscard(pScrn, accel_state->ib);
+-	return;
++        R600IBDiscard(pScrn, accel_state->ib);
++        return;
+     }
+ 
+     accel_state->vb_mc_addr = RHDDRIGetIntGARTLocation(pScrn) +
+-	(accel_state->ib->idx * accel_state->ib->total) + (accel_state->ib->total / 2);
++        (accel_state->ib->idx * accel_state->ib->total) + (accel_state->ib->total / 2);
+     accel_state->vb_size = accel_state->vb_index * 8;
+ 
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++    x = (accel_state->ib)->used>>2;
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++
+     /* flush vertex cache */
+-    if ((rhdPtr->ChipSet == RHD_RV610) ||
+-	(rhdPtr->ChipSet == RHD_RV620) ||
+-	(rhdPtr->ChipSet == RHD_M72) ||
+-	(rhdPtr->ChipSet == RHD_M74) ||
+-	(rhdPtr->ChipSet == RHD_M82) ||
+-	(rhdPtr->ChipSet == RHD_RS780) ||
+-	(rhdPtr->ChipSet == RHD_RV710))
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
+-    else
+-	cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
++ /*   if ((rhdPtr->ChipSet == RHD_RV610) ||
++        (rhdPtr->ChipSet == RHD_RV620) ||
++        (rhdPtr->ChipSet == RHD_M72) ||
++        (rhdPtr->ChipSet == RHD_M74) ||
++        (rhdPtr->ChipSet == RHD_M82) ||
++        (rhdPtr->ChipSet == RHD_RS780) ||
++        (rhdPtr->ChipSet == RHD_RV710)) { */
++
++     if (accel_state->Virtex_Flush_Quirk) {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++    } else {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++        ib_head[x+1] = VC_ACTION_ENA_bit;
++    }
++
++    ib_head[x+2] = ( accel_state->vb_size == 0xffffffff ? 0xffffffff :((accel_state->vb_size   + 255)>> 8));
++    ib_head[x+3] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+4] = 10;
++/*    (accel_state->ib)->used += 20; */
++
++
+ 
+     /* Vertex buffer setup */
+-    vtx_res.id              = SQ_VTX_RESOURCE_vs;
++/*    vtx_res.id              = SQ_VTX_RESOURCE_vs;
+     vtx_res.vtx_size_dw     = 8 / 4;
+     vtx_res.vtx_num_entries = accel_state->vb_size / 4;
+     vtx_res.mem_req_size    = 1;
+     vtx_res.vb_addr         = accel_state->vb_mc_addr;
+-    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res);
++    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res); */
++
++/*x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+6]= ((SQ_VTX_RESOURCE + SQ_VTX_RESOURCE_vs * SQ_VTX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+7] = accel_state->vb_mc_addr & 0xffffffff;
++    ib_head[x+8] = ( accel_state->vb_size ) - 1;
++    ib_head[x+9] = (((accel_state->vb_mc_addr >> 32)  & BASE_ADDRESS_HI_mask) |
++                   (8 << SQ_VTX_CONSTANT_WORD2_0__STRIDE_shift));
++    ib_head[x+10] = 1 << MEM_REQUEST_SIZE_shift;
++    ib_head[x+11] = 0;
++    ib_head[x+12] = 0;
++    ib_head[x+13] = SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift;
++
++/*    (accel_state->ib)->used += 36; */
+ 
+     /* Draw */
+-    draw_conf.prim_type          = DI_PT_RECTLIST;
++/*    draw_conf.prim_type          = DI_PT_RECTLIST;
+     draw_conf.vgt_draw_initiator = DI_SRC_SEL_AUTO_INDEX;
+-    draw_conf.num_instances      = 1;
+-    draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw;
++    draw_conf.num_instances      = 1; */
++/*    draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw; */
++/*    draw_conf.num_indices        = accel_state->vb_size / 8;
+     draw_conf.index_type         = DI_INDEX_SIZE_16_BIT;
+ 
+     draw_auto(pScrn, accel_state->ib, &draw_conf);
++*/
++
++/* x = (accel_state->ib)->used>>2; */
++
++ ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;
++ ib_head[x+15]= (((VGT_PRIMITIVE_TYPE) - SET_CONFIG_REG_offset) >> 2);
++ ib_head[x+16]= DI_PT_RECTLIST;
++
++ ib_head[x+17] = RADEON_CP_PACKET3 | IT_INDEX_TYPE << 8;
++ ib_head[x+18] = DI_INDEX_SIZE_16_BIT;
++ ib_head[x+19] = RADEON_CP_PACKET3 | IT_NUM_INSTANCES << 8;
++ ib_head[x+20] = 1;
++ ib_head[x+21] = RADEON_CP_PACKET3 | (IT_DRAW_INDEX_AUTO << 8) | 0x10000;
++ ib_head[x+22] =  accel_state->vb_index;  /* accel_state->vb_size / 8; */
++ ib_head[x+23] = DI_SRC_SEL_AUTO_INDEX;
++
++
++/*    (accel_state->ib)->used += 76; */
++
++
++/*    wait_3d_idle_clean(pScrn, accel_state->ib); */
++
++    ib_head[x+24] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+25] =  CACHE_FLUSH_AND_INV_EVENT;
++    ib_head[x+26] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+27] =  0x10;
++    ib_head[x+28] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++/*    (accel_state->ib)->used += 96;  */
++
+ 
+-    wait_3d_idle_clean(pScrn, accel_state->ib);
+ 
+     /* sync dst surface */
+-    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
+-			accel_state->dst_size, accel_state->dst_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
++                        accel_state->dst_size, accel_state->dst_mc_addr); */
++
++    ib_head[x+29] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+30] = (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit);
++    ib_head[x+31] = ( accel_state->dst_size == 0xffffffff ? 0xffffffff :((accel_state->dst_size   + 255)>> 8));
++    ib_head[x+32] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+33] = 10;
++
++    (accel_state->ib)->used += 136;
++
++
++/*    R600CPFlushIndirect(pScrn, accel_state->ib); */
++
++    x += 34;
++
++    while( (accel_state->ib)->used & 0x3C ){
++       ib_head[x++] = CP_PACKET2();
++       (accel_state->ib)->used += 4;
++   }
++
++    indirect.idx     = (accel_state->ib)->idx;
++    indirect.start   = start;
++    indirect.end     = (accel_state->ib)->used;
++    indirect.discard = 1;
++
++
++    drmCommandWriteRead(drmFD, DRM_RADEON_INDIRECT,
++                        &indirect, sizeof(drm_radeon_indirect_t));
++
+ 
+-    R600CPFlushIndirect(pScrn, accel_state->ib);
+ }
+ 
++
++
+ static void
+ R600DoPrepareCopy(ScrnInfoPtr pScrn,
+-		  int src_pitch, int src_width, int src_height, uint32_t src_offset, int src_bpp,
+-		  int dst_pitch, int dst_height, uint32_t dst_offset, int dst_bpp,
+-		  int rop, Pixel planemask)
++                  int src_pitch, int src_width, int src_height, uint32_t src_offset, int src_bpp,
++                  int dst_pitch, int dst_height, uint32_t dst_offset, int dst_bpp,
++                  int rop, Pixel planemask)
+ {
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+     int pmask = 0;
+-    cb_config_t     cb_conf;
+-    tex_resource_t  tex_res;
+-    tex_sampler_t   tex_samp;
+-    shader_config_t vs_conf, ps_conf;
+-
+-    CLEAR (cb_conf);
+-    CLEAR (tex_res);
+-    CLEAR (tex_samp);
+-    CLEAR (vs_conf);
+-    CLEAR (ps_conf);
++/*    cb_config_t     cb_conf; */
++/*    tex_resource_t  tex_res; */
++/*    tex_sampler_t   tex_samp; */
++/*    shader_config_t vs_conf, ps_conf; */
++int x;
++uint32_t *ib_head;
++
++/*    CLEAR (cb_conf); */
++/*    CLEAR (tex_res); */
++/*    CLEAR (tex_samp); */
++/*    CLEAR (vs_conf); */
++/*    CLEAR (ps_conf); */
+ 
+     accel_state->ib = RHDDRMCPBuffer(pScrn->scrnIndex);
++     ib_head = (pointer)(char*)(accel_state->ib)->address;
++      x = (accel_state->ib)->used>>2;
+ 
+-    /* Init */
+-    start_3d(pScrn, accel_state->ib);
++      if (rhdPtr->ChipSet < RHD_RV770) {
++/*      PACK3(ib, IT_START_3D_CMDBUF, 1);
++        E32(ib, 0); */
+ 
+-    /* cp_set_surface_sync(pScrn, accel_state->ib); */
++        ib_head[x] = RADEON_CP_PACKET3 | (IT_START_3D_CMDBUF << 8);
++        ib_head[x+1] = 0x00000000;
++        x+=2;
++        (accel_state->ib)->used += 8;
++      }
++
++/*    PACK3(ib, IT_CONTEXT_CONTROL, 2);
++    E32(ib, 0x80000000);
++    E32(ib, 0x80000000); */
++
++      ib_head[x] = RADEON_CP_PACKET3 | (0x0001 << 16) | (IT_CONTEXT_CONTROL << 8);
++      ib_head[x+1] = 0x80000000;
++      ib_head[x+2] = 0x80000000;
++/*    ib->used += 12; */
++
++
++
++/*    wait_3d_idle_clean (pScrn, ib); */
++
++      ib_head[x+3] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++      ib_head[x+4] =  CACHE_FLUSH_AND_INV_EVENT;
++      ib_head[x+5] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++      ib_head[x+6] =  0x10;
++      ib_head[x+7] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++
++
++    if (!accel_state->XHas3DEngineState){
++          /* Init */
++          (accel_state->ib)->used += 32;
++          set_default_state(pScrn, accel_state->ib);
++/*          ib_head = (pointer)(char*)(accel_state->ib)->address; */
++          x = ((accel_state->ib)->used>>2) - 8;
++      (accel_state->ib)->used -= 32;
++    }
++
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2; */
+ 
+-    set_default_state(pScrn, accel_state->ib);
+ 
+     /* Scissor / viewport */
+-    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
+-    EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit);
++/*    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
++    EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit); */
++    ib_head[x+8]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+9]= ( PA_CL_VTE_CNTL - 0x28000) >> 2;
++    ib_head[x+10]=  VTX_XY_FMT_bit;
++    ib_head[x+11]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+12]= ( PA_CL_CLIP_CNTL - 0x28000) >> 2;
++    ib_head[x+13]= CLIP_DISABLE_bit;
++/*    (accel_state->ib)->used += 24; */
++
+ 
+     accel_state->vs_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	accel_state->copy_vs_offset;
++        accel_state->copy_vs_offset;
+     accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	accel_state->copy_ps_offset;
++        accel_state->copy_ps_offset;
+     accel_state->vs_size = 512;
+     accel_state->ps_size = 512;
+ 
+     /* Shader */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->vs_size, accel_state->vs_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->vs_size, accel_state->vs_mc_addr); */
++
++/*    x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+14] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+15] = SH_ACTION_ENA_bit;
++    ib_head[x+16] = (512 + 255)>> 8;
++    ib_head[x+17] = accel_state->vs_mc_addr >> 8;
++    ib_head[x+18] = 10;
++/*    (accel_state->ib)->used += 44; */
++
++
+ 
+-    vs_conf.shader_addr         = accel_state->vs_mc_addr;
++/*    vs_conf.shader_addr         = accel_state->vs_mc_addr;
+     vs_conf.num_gprs            = 2;
+     vs_conf.stack_size          = 0;
+-    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++    vs_conf.dx10_clamp          = 0;
++    vs_conf.prime_cache_pgm_en  = 0;
++    vs_conf.prime_cache_on_draw = 0;
++    vs_conf.fetch_cache_lines   = 0;
++    vs_conf.prime_cache_en      = 0;
++    vs_conf.prime_cache_on_const= 0;
++    vs_conf.clamp_consts        = 0;
++    vs_conf.export_mode         = 0;
++    vs_conf.uncached_first_inst = 0; */
++
++/*    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++*/
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++    ib_head[x+19]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+20]= (SQ_PGM_START_VS - 0x28000) >> 2;
++    ib_head[x+21]= accel_state->vs_mc_addr >> 8;
++    ib_head[x+22]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+23]= (SQ_PGM_RESOURCES_VS - 0x28000) >> 2;
++    ib_head[x+24]= (2 << NUM_GPRS_shift);
++    ib_head[x+25]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+26]= (SQ_PGM_CF_OFFSET_VS - 0x28000) >> 2;
++    ib_head[x+27]= 0;
++/*    (accel_state->ib)->used += 36; */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->ps_size, accel_state->ps_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->ps_size, accel_state->ps_mc_addr); */
+ 
+-    ps_conf.shader_addr         = accel_state->ps_mc_addr;
++/*    x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+28] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+29] = SH_ACTION_ENA_bit;
++    ib_head[x+30] = (512 + 255)>> 8;
++    ib_head[x+31] = accel_state->ps_mc_addr >> 8;
++    ib_head[x+32] = 10;
++/*    (accel_state->ib)->used += 100; */
++
++
++
++/*    ps_conf.shader_addr         = accel_state->ps_mc_addr;
+     ps_conf.num_gprs            = 1;
+     ps_conf.stack_size          = 0;
+-    ps_conf.uncached_first_inst = 1;
++    ps_conf.dx10_clamp          = 0;
++    ps_conf.prime_cache_pgm_en  = 0;
++    ps_conf.prime_cache_on_draw = 0;
++    ps_conf.fetch_cache_lines   = 0;
++    ps_conf.prime_cache_en      = 0;
++    ps_conf.prime_cache_on_const= 0;
+     ps_conf.clamp_consts        = 0;
+     ps_conf.export_mode         = 2;
++    ps_conf.uncached_first_inst = 1;
+     ps_setup                    (pScrn, accel_state->ib, &ps_conf);
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+33]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+34]= (SQ_PGM_START_PS - 0x28000) >> 2;
++    ib_head[x+35]= accel_state->ps_mc_addr >> 8;
++    ib_head[x+36]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+37]= (SQ_PGM_RESOURCES_PS - 0x28000) >> 2;
++    ib_head[x+38]= (1 << NUM_GPRS_shift) | UNCACHED_FIRST_INST_bit;
++    ib_head[x+39]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+40]= (SQ_PGM_EXPORTS_PS - 0x28000) >> 2;
++    ib_head[x+41]= 2;
++    ib_head[x+42]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+43]= (SQ_PGM_CF_OFFSET_PS - 0x28000) >> 2;
++    ib_head[x+44]= 0;
++
++/*    (accel_state->ib)->used += 48; */
++
++
+ 
+     accel_state->src_size[0] = src_pitch * src_height * (src_bpp/8);
+     accel_state->src_mc_addr[0] = src_offset;
+@@ -420,11 +954,20 @@ R600DoPrepareCopy(ScrnInfoPtr pScrn,
+     accel_state->src_bpp[0] = src_bpp;
+ 
+     /* flush texture cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+-			accel_state->src_size[0], accel_state->src_mc_addr[0]);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++                        accel_state->src_size[0], accel_state->src_mc_addr[0]); */
++
++
++    ib_head[x+45] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+46] = TC_ACTION_ENA_bit;
++    ib_head[x+47] = ( accel_state->src_size[0] == 0xffffffff ? 0xffffffff :((accel_state->src_size[0] + 255)>> 8));
++    ib_head[x+48] = src_offset >> 8; /*accel_state->src_mc_addr[0] >> 8; */
++    ib_head[x+49] = 10;
++/*    (accel_state->ib)->used += 200; */
++
+ 
+     /* Texture */
+-    tex_res.id                  = 0;
++/*    tex_res.id                  = 0;
+     tex_res.w                   = src_width;
+     tex_res.h                   = src_height;
+     tex_res.pitch               = accel_state->src_pitch[0];
+@@ -433,54 +976,154 @@ R600DoPrepareCopy(ScrnInfoPtr pScrn,
+     tex_res.base                = accel_state->src_mc_addr[0];
+     tex_res.mip_base            = accel_state->src_mc_addr[0];
+     if (src_bpp == 8) {
+-	tex_res.format              = FMT_8;
+-	tex_res.dst_sel_x           = SQ_SEL_1; /* R */
+-	tex_res.dst_sel_y           = SQ_SEL_1; /* G */
+-	tex_res.dst_sel_z           = SQ_SEL_1; /* B */
+-	tex_res.dst_sel_w           = SQ_SEL_X; /* A */
+-    } else if (src_bpp == 16) {
+-	tex_res.format              = FMT_5_6_5;
+-	tex_res.dst_sel_x           = SQ_SEL_Z; /* R */
+-	tex_res.dst_sel_y           = SQ_SEL_Y; /* G */
+-	tex_res.dst_sel_z           = SQ_SEL_X; /* B */
+-	tex_res.dst_sel_w           = SQ_SEL_1; /* A */
+-    } else {
+-	tex_res.format              = FMT_8_8_8_8;
+-	tex_res.dst_sel_x           = SQ_SEL_Z; /* R */
+-	tex_res.dst_sel_y           = SQ_SEL_Y; /* G */
+-	tex_res.dst_sel_z           = SQ_SEL_X; /* B */
+-	tex_res.dst_sel_w           = SQ_SEL_W; /* A */
+-    }
++        tex_res.format              = FMT_8;
++        tex_res.dst_sel_x           = SQ_SEL_1; */ /* R */
++/*      tex_res.dst_sel_y           = SQ_SEL_1; */ /* G */
++/*      tex_res.dst_sel_z           = SQ_SEL_1; */ /* B */
++/*      tex_res.dst_sel_w           = SQ_SEL_X; */ /* A */
++/*    } else if (src_bpp == 16) {
++        tex_res.format              = FMT_5_6_5;
++        tex_res.dst_sel_x           = SQ_SEL_Z; */ /* R */
++/*      tex_res.dst_sel_y           = SQ_SEL_Y; */ /* G */
++/*      tex_res.dst_sel_z           = SQ_SEL_X; */ /* B */
++/*      tex_res.dst_sel_w           = SQ_SEL_1; */ /* A */
++/*    } else {
++        tex_res.format              = FMT_8_8_8_8;
++        tex_res.dst_sel_x           = SQ_SEL_Z; */ /* R */
++/*      tex_res.dst_sel_y           = SQ_SEL_Y; */ /* G */
++/*      tex_res.dst_sel_z           = SQ_SEL_X; */ /* B */
++/*      tex_res.dst_sel_w           = SQ_SEL_W; */ /* A */
++/*    }
+ 
+     tex_res.request_size        = 1;
+     tex_res.base_level          = 0;
+     tex_res.last_level          = 0;
+     tex_res.perf_modulation     = 0;
+-    set_tex_resource            (pScrn, accel_state->ib, &tex_res);
++    set_tex_resource            (pScrn, accel_state->ib, &tex_res);*/
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+50]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+51]= (SQ_TEX_RESOURCE  - SET_RESOURCE_offset) >> 2;
++
++    if(src_width){
++      ib_head[x+52] = ((SQ_TEX_DIM_2D << DIM_shift) |
++/*                    (((((accel_state->src_pitch[0] + 7) >> 3) - 1) << PITCH_shift) | */
++/*                    (((((accel_state->src_pitch[0] - 1) >> 3)) << PITCH_shift) | */
++                    (((((src_pitch - 1) >> 3)) << PITCH_shift) |
++                                  ((src_width - 1) << TEX_WIDTH_shift)));
++    } else {
++      ib_head[x+52] = (SQ_TEX_DIM_2D << DIM_shift);
++    }
++
++    if(src_height) {
++      ib_head[x+53] = ((src_height - 1) << TEX_HEIGHT_shift);
++    } else {
++      ib_head[x+53] = 0;
++    }
++
++    ib_head[x+54] = src_offset >> 8; /* (accel_state->src_mc_addr[0]) >> 8; */
++    ib_head[x+55] = src_offset >> 8; /* (accel_state->src_mc_addr[0]) >> 8; */
++
++    if (src_bpp == 8) {
++        ib_head[x+53] |= (FMT_8 << SQ_TEX_RESOURCE_WORD1_0__DATA_FORMAT_shift);
++        ib_head[x+56] = (1 << REQUEST_SIZE_shift) |
++                             (SQ_SEL_1 << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_X_shift) |
++                             (SQ_SEL_1 << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Y_shift) |
++                             (SQ_SEL_1 << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Z_shift) |
++                             (SQ_SEL_X << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_W_shift);
++    } else if (src_bpp == 16) {
++        ib_head[x+53] |= (FMT_5_6_5 << SQ_TEX_RESOURCE_WORD1_0__DATA_FORMAT_shift);
++        ib_head[x+56] = (1 << REQUEST_SIZE_shift) |
++                             (SQ_SEL_Z << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_X_shift) |
++                             (SQ_SEL_Y << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Y_shift) |
++                             (SQ_SEL_X << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Z_shift) |
++                             (SQ_SEL_1 << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_W_shift);
++    } else {
++        ib_head[x+53] |= (FMT_8_8_8_8 << SQ_TEX_RESOURCE_WORD1_0__DATA_FORMAT_shift);
++        ib_head[x+56] = (1 << REQUEST_SIZE_shift) |
++                             (SQ_SEL_Z << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_X_shift) |
++                             (SQ_SEL_Y << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Y_shift) |
++                             (SQ_SEL_X << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Z_shift) |
++                             (SQ_SEL_W << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_W_shift);
++    }
++    ib_head[x+57] = 0;
++    ib_head[x+58] = (SQ_TEX_VTX_VALID_TEXTURE << SQ_TEX_RESOURCE_WORD6_0__TYPE_shift);
++
++
++/*    (accel_state->ib)->used += 36; */
+ 
+-    tex_samp.id                 = 0;
++
++/*    tex_samp.id                 = 0;
+     tex_samp.clamp_x            = SQ_TEX_CLAMP_LAST_TEXEL;
+     tex_samp.clamp_y            = SQ_TEX_CLAMP_LAST_TEXEL;
+     tex_samp.clamp_z            = SQ_TEX_WRAP;
+     tex_samp.xy_mag_filter      = SQ_TEX_XY_FILTER_POINT;
+     tex_samp.xy_min_filter      = SQ_TEX_XY_FILTER_POINT;
+     tex_samp.z_filter           = SQ_TEX_Z_FILTER_NONE;
+-    tex_samp.mip_filter         = 0;			/* no mipmap */
+-    set_tex_sampler             (pScrn, accel_state->ib, &tex_samp);
++    tex_samp.mip_filter         = 0;    */              /* no mipmap */
++/*    tex_samp.perf_mip         = 0;
++    tex_samp.perf_z             = 0;
++    tex_samp.min_lod            = 0;
++    tex_samp.max_lod            = 0;
++    tex_samp.lod_bias           = 0;
++    tex_samp.lod_bias2          = 0;
++    tex_samp.lod_uses_minor_axis = 0;
++    tex_samp.point_sampling_clamp = 0;
++    tex_samp.tex_array_override = 0;
++    tex_samp.mc_coord_truncate  = 0;
++    tex_samp.force_degamma      = 0;
++    tex_samp.fetch_4            = 0;
++    tex_samp.sample_is_pcf      = 0;
++    tex_samp.type               = 0;
++    tex_samp.border_color       = 0;
++    tex_samp.depth_compare      = 0;
++    tex_samp.chroma_key         = 0;
++
++    set_tex_sampler             (pScrn, accel_state->ib, &tex_samp); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++    ib_head[x+59]= RADEON_CP_PACKET3 | (IT_SET_SAMPLER  << 8) | 0x30000;
++    ib_head[x+60]= (SQ_TEX_SAMPLER_WORD  - SET_SAMPLER_offset) >> 2;
++
++    ib_head[x+61] = ((SQ_TEX_CLAMP_LAST_TEXEL << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                    (SQ_TEX_CLAMP_LAST_TEXEL << CLAMP_Y_shift)                         |
++                    (SQ_TEX_WRAP << CLAMP_Z_shift)                                     |
++                    (SQ_TEX_XY_FILTER_POINT << XY_MAG_FILTER_shift)                    |
++                    (SQ_TEX_XY_FILTER_POINT << XY_MIN_FILTER_shift)                    |
++                    (SQ_TEX_Z_FILTER_NONE << Z_FILTER_shift) );
++    ib_head[x+62] = 0;
++    ib_head[x+63] = 0;
++/*    (accel_state->ib)->used += 56; */
+ 
+ 
+     /* Render setup */
+     if (planemask & 0x000000ff)
+-	pmask |= 4; /* B */
++        pmask |= 4; /* B */
+     if (planemask & 0x0000ff00)
+-	pmask |= 2; /* G */
++        pmask |= 2; /* G */
+     if (planemask & 0x00ff0000)
+-	pmask |= 1; /* R */
++        pmask |= 1; /* R */
+     if (planemask & 0xff000000)
+-	pmask |= 8; /* A */
+-    EREG  (accel_state->ib, CB_SHADER_MASK,                      (pmask << OUTPUT0_ENABLE_shift));
++        pmask |= 8; /* A */
++ /*   EREG  (accel_state->ib, CB_SHADER_MASK,                      (pmask << OUTPUT0_ENABLE_shift));
+     EREG  (accel_state->ib, R7xx_CB_SHADER_CONTROL,              (RT0_ENABLE_bit));
+-    EREG  (accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[rop]);
++    EREG  (accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[rop]); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++    ib_head[x+64]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+65]= ( CB_SHADER_MASK - 0x28000) >> 2;
++    ib_head[x+66]=  (pmask << OUTPUT0_ENABLE_shift);
++    ib_head[x+67]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+68]= ( R7xx_CB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+69]= RT0_ENABLE_bit;
++    ib_head[x+70]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+71]= ( CB_COLOR_CONTROL - 0x28000) >> 2;
++    ib_head[x+72]= RADEON_ROP[rop];
++/*    (accel_state->ib)->used += 92; */
+ 
+     accel_state->dst_size = dst_pitch * dst_height * (dst_bpp/8);
+     accel_state->dst_mc_addr = dst_offset;
+@@ -488,45 +1131,153 @@ R600DoPrepareCopy(ScrnInfoPtr pScrn,
+     accel_state->dst_height = dst_height;
+     accel_state->dst_bpp = dst_bpp;
+ 
+-    cb_conf.id = 0;
++/*    cb_conf.id = 0;
+     cb_conf.w = accel_state->dst_pitch;
+     cb_conf.h = dst_height;
+     cb_conf.base = accel_state->dst_mc_addr;
+     if (dst_bpp == 8) {
+-	cb_conf.format = COLOR_8;
+-	cb_conf.comp_swap = 3; /* A */
+-    } else if (dst_bpp == 16) {
+-	cb_conf.format = COLOR_5_6_5;
+-	cb_conf.comp_swap = 2; /* RGB */
+-    } else {
+-	cb_conf.format = COLOR_8_8_8_8;
+-	cb_conf.comp_swap = 1; /* ARGB */
+-    }
++        cb_conf.format = COLOR_8;
++        cb_conf.comp_swap = 3;  */ /* A */
++/*    } else if (dst_bpp == 16) {
++        cb_conf.format = COLOR_5_6_5;
++        cb_conf.comp_swap = 2; */ /* RGB */
++/*    } else {
++        cb_conf.format = COLOR_8_8_8_8;
++        cb_conf.comp_swap = 1; */ /* ARGB */
++/*    }
+     cb_conf.source_format = 1;
+     cb_conf.blend_clamp = 1;
+     set_render_target(pScrn, accel_state->ib, &cb_conf);
++*/
++
++/*x = (accel_state->ib)->used>>2;*/
++
++    ib_head[x+73]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+74]= (CB_COLOR0_BASE  - 0x28000) >> 2;
++    ib_head[x+75]= dst_offset >> 8; /* (accel_state->dst_mc_addr >> 8); */
++
++    // rv6xx workaround
++    if ((rhdPtr->ChipSet > RHD_R600) &&
++        (rhdPtr->ChipSet < RHD_RV770)) {
++/*      PACK3(ib, IT_SURFACE_BASE_UPDATE, 1);
++        E32(ib, (2 << cb_conf->id)); */
++        ib_head[x+76]= RADEON_CP_PACKET3 | (IT_SURFACE_BASE_UPDATE << 8);
++        ib_head[x+77]= 2;
++        x+=2;
++       (accel_state->ib)->used += 8;
++    }
++
++    ib_head[x+76]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+77]= (CB_COLOR0_SIZE - 0x28000) >> 2;
++/*    ib_head[x+78]= ((((accel_state->dst_pitch/8) - 1) << PITCH_TILE_MAX_shift)     |
++                   ((accel_state->dst_pitch * ((dst_height + 7)& ~7)) << SLICE_TILE_MAX_shift)); */
++    ib_head[x+78]= ((((dst_pitch/8) - 1) << PITCH_TILE_MAX_shift)     |
++                   ((dst_pitch * ((dst_height + 7)& ~7)) << SLICE_TILE_MAX_shift));
++
++
++    ib_head[x+79]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+80]= (CB_COLOR0_VIEW - 0x28000) >> 2;
++    ib_head[x+81]= 0;
++
++    ib_head[x+82]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+83]= (CB_COLOR0_INFO - 0x28000) >> 2;
++    if (dst_bpp == 8) {
++       ib_head[x+84]= ((COLOR_8        << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (3   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    } else if (dst_bpp == 16) {
++       ib_head[x+84]= ((COLOR_5_6_5    << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (2   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    } else {
++       ib_head[x+84]= ((COLOR_8_8_8_8  << CB_COLOR0_INFO__FORMAT_shift)         |
++                       (1   << COMP_SWAP_shift)                                 |
++                        SOURCE_FORMAT_bit  | BLEND_CLAMP_bit );
++    }
++    ib_head[x+85]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+86]= (CB_COLOR0_TILE - 0x28000) >> 2;
++    ib_head[x+87]= 0;
++
++    ib_head[x+88]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+89]= (CB_COLOR0_FRAG - 0x28000) >> 2;
++    ib_head[x+90]= 0;
++
++    ib_head[x+91]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+92]= (CB_COLOR0_MASK - 0x28000) >> 2;
++    ib_head[x+93]= 0;
++/*    (accel_state->ib)->used += 84; */
++
++
++
++/*    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit                      |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
++    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)            |*/  /* EARLY_Z_THEN_LATE_Z */
++/*                                                              DUAL_EXPORT_ENABLE_bit)); */ /* Only useful if no depth export */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+94]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+95]= ( PA_SU_SC_MODE_CNTL - 0x28000) >> 2;
++    ib_head[x+96]=  (FACE_bit                        |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift));
++
++    ib_head[x+97]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+98]= (DB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+99]= ((1 << Z_ORDER_shift)            | /* EARLY_Z_THEN_LATE_Z */
++                  DUAL_EXPORT_ENABLE_bit);
++
+ 
+-    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit			|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)	|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
+-    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)		| /* EARLY_Z_THEN_LATE_Z */
+-								DUAL_EXPORT_ENABLE_bit)); /* Only useful if no depth export */
+ 
+     /* Interpolator setup */
+     /* export tex coord from VS */
++/*
+     EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((1 - 1) << VS_EXPORT_COUNT_shift));
+     EREG(accel_state->ib, SPI_VS_OUT_ID_0, (0 << SEMANTIC_0_shift));
++*/
++    ib_head[x+100]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+101]= ( SPI_VS_OUT_CONFIG - 0x28000) >> 2;
++    ib_head[x+102]= ((1 - 1) << VS_EXPORT_COUNT_shift);
++
++    ib_head[x+103]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+104]= ( SPI_VS_OUT_ID_0 - 0x28000) >> 2;
++    ib_head[x+105]= (0 << SEMANTIC_0_shift);
++
+ 
+     /* Enabling flat shading needs both FLAT_SHADE_bit in SPI_PS_INPUT_CNTL_x
+      * *and* FLAT_SHADE_ENA_bit in SPI_INTERP_CONTROL_0 */
+     /* input tex coord from VS */
+-    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 ((1 << NUM_INTERP_shift)));
++/*    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 ((1 << NUM_INTERP_shift)));
+     EREG(accel_state->ib, SPI_PS_IN_CONTROL_1,                 0);
+-    /* color semantic id 0 -> GPR[0] */
+-    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)	|
+-								(0x01 << DEFAULT_VAL_shift)	|
+-								SEL_CENTROID_bit));
++*/    /* color semantic id 0 -> GPR[0] */
++/*    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)      |
++                                                                (0x01 << DEFAULT_VAL_shift)     |
++                                                                SEL_CENTROID_bit));
+     EREG(accel_state->ib, SPI_INTERP_CONTROL_0,                0);
++*/
++
++    ib_head[x+106]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+107]= ( SPI_PS_IN_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+108]= (1 << NUM_INTERP_shift);
++
++    ib_head[x+109]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+110]= (SPI_PS_IN_CONTROL_1 - 0x28000) >> 2;
++    ib_head[x+111]= 0;
++
++    ib_head[x+112]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+113]= ( SPI_PS_INPUT_CNTL_0  - 0x28000) >> 2;
++    ib_head[x+114]=  ((0    << SEMANTIC_shift)      |
++                    (0x01 << DEFAULT_VAL_shift)     |
++                    SEL_CENTROID_bit);
++
++    ib_head[x+115]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+116]= (SPI_INTERP_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+117]= 0;
++
++
++    (accel_state->ib)->used += 472;
+ 
+     accel_state->vb_index = 0;
+ 
+@@ -537,60 +1288,151 @@ R600DoCopy(ScrnInfoPtr pScrn)
+ {
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+-    draw_config_t   draw_conf;
+-    vtx_resource_t  vtx_res;
++/*    draw_config_t   draw_conf; */
++/*    vtx_resource_t  vtx_res; */
++int x;
++uint32_t *ib_head;
++    int                start  = 0;
++    drm_radeon_indirect_t  indirect;
++    int drmFD = RHDDRMFDGet(pScrn->scrnIndex);
+ 
+-    CLEAR (draw_conf);
+-    CLEAR (vtx_res);
++/*    CLEAR (draw_conf); */
++/*    CLEAR (vtx_res); */
+ 
+     if (accel_state->vb_index == 0) {
+-	R600IBDiscard(pScrn, accel_state->ib);
+-	return;
++        R600IBDiscard(pScrn, accel_state->ib);
++        return;
+     }
+ 
+     accel_state->vb_mc_addr = RHDDRIGetIntGARTLocation(pScrn) +
+-	(accel_state->ib->idx * accel_state->ib->total) + (accel_state->ib->total / 2);
++        (accel_state->ib->idx * accel_state->ib->total) + (accel_state->ib->total / 2);
+     accel_state->vb_size = accel_state->vb_index * 16;
+ 
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++
+     /* flush vertex cache */
+-    if ((rhdPtr->ChipSet == RHD_RV610) ||
+-	(rhdPtr->ChipSet == RHD_RV620) ||
+-	(rhdPtr->ChipSet == RHD_M72) ||
+-	(rhdPtr->ChipSet == RHD_M74) ||
+-	(rhdPtr->ChipSet == RHD_M82) ||
+-	(rhdPtr->ChipSet == RHD_RS780) ||
+-	(rhdPtr->ChipSet == RHD_RV710))
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
+-    else
+-	cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
++ /*   if ((rhdPtr->ChipSet == RHD_RV610) ||
++        (rhdPtr->ChipSet == RHD_RV620) ||
++        (rhdPtr->ChipSet == RHD_M72) ||
++        (rhdPtr->ChipSet == RHD_M74) ||
++        (rhdPtr->ChipSet == RHD_M82) ||
++        (rhdPtr->ChipSet == RHD_RS780) ||
++        (rhdPtr->ChipSet == RHD_RV710)) { */
++
++     if (accel_state->Virtex_Flush_Quirk) {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++
++    } else {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++        ib_head[x+1] = VC_ACTION_ENA_bit;
++
++    }
++    ib_head[x+2] = ( accel_state->vb_size == 0xffffffff ? 0xffffffff :((accel_state->vb_size   + 255)>> 8));
++    ib_head[x+3] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+4] = 10;
++/*    (accel_state->ib)->used += 20; */
++
+ 
+     /* Vertex buffer setup */
+-    vtx_res.id              = SQ_VTX_RESOURCE_vs;
++/*    vtx_res.id              = SQ_VTX_RESOURCE_vs;
+     vtx_res.vtx_size_dw     = 16 / 4;
+     vtx_res.vtx_num_entries = accel_state->vb_size / 4;
+     vtx_res.mem_req_size    = 1;
+     vtx_res.vb_addr         = accel_state->vb_mc_addr;
+     set_vtx_resource        (pScrn, accel_state->ib, &vtx_res);
+-
+-    draw_conf.prim_type          = DI_PT_RECTLIST;
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+6]= ((SQ_VTX_RESOURCE + SQ_VTX_RESOURCE_vs * SQ_VTX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+7] = accel_state->vb_mc_addr & 0xffffffff;
++    ib_head[x+8] = ( accel_state->vb_size ) - 1;
++    ib_head[x+9] = (((accel_state->vb_mc_addr >> 32)  & BASE_ADDRESS_HI_mask) |
++                   (16 << SQ_VTX_CONSTANT_WORD2_0__STRIDE_shift));
++    ib_head[x+10] = 1 << MEM_REQUEST_SIZE_shift;
++    ib_head[x+11] = 0;
++    ib_head[x+12] = 0;
++    ib_head[x+13] = SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift;
++
++/*    (accel_state->ib)->used += 36; */
++/*    draw_conf.prim_type          = DI_PT_RECTLIST;
+     draw_conf.vgt_draw_initiator = DI_SRC_SEL_AUTO_INDEX;
+-    draw_conf.num_instances      = 1;
+-    draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw;
++    draw_conf.num_instances      = 1; */
++/*    draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw; */
++/*    draw_conf.num_indices        = accel_state->vb_size / 16;
+     draw_conf.index_type         = DI_INDEX_SIZE_16_BIT;
+ 
+-    draw_auto(pScrn, accel_state->ib, &draw_conf);
++    draw_auto(pScrn, accel_state->ib, &draw_conf);*/
++
++/* x = (accel_state->ib)->used>>2; */
++
++ ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;
++ ib_head[x+15]= (((VGT_PRIMITIVE_TYPE) - SET_CONFIG_REG_offset) >> 2);
++ ib_head[x+16]= DI_PT_RECTLIST;
++
++ ib_head[x+17] = RADEON_CP_PACKET3 | IT_INDEX_TYPE << 8;
++ ib_head[x+18] = DI_INDEX_SIZE_16_BIT;
++ ib_head[x+19] = RADEON_CP_PACKET3 | IT_NUM_INSTANCES << 8;
++ ib_head[x+20] = 1;
++ ib_head[x+21] = RADEON_CP_PACKET3 | (IT_DRAW_INDEX_AUTO << 8) | 0x10000;
++ ib_head[x+22] = accel_state->vb_index; /* accel_state->vb_size / 16; */
++ ib_head[x+23] = DI_SRC_SEL_AUTO_INDEX;
++
+ 
+-    wait_3d_idle_clean(pScrn, accel_state->ib);
++/*    (accel_state->ib)->used += 76; */
++
++/*    wait_3d_idle_clean(pScrn, accel_state->ib); */
++
++    ib_head[x+24] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+25] =  CACHE_FLUSH_AND_INV_EVENT;
++    ib_head[x+26] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+27] =  0x10;
++    ib_head[x+28] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++/*    (accel_state->ib)->used += 96; */
+ 
+     /* sync dst surface */
+-    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
+-			accel_state->dst_size, accel_state->dst_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
++                        accel_state->dst_size, accel_state->dst_mc_addr);
++*/
++
++        ib_head[x+29] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+30] = (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit);
++        ib_head[x+31] = ( accel_state->dst_size == 0xffffffff ? 0xffffffff :((accel_state->dst_size + 255)>> 8));
++        ib_head[x+32] = accel_state->dst_mc_addr >> 8;
++        ib_head[x+33] = 10;
++    (accel_state->ib)->used += 136;
++
++/*    R600CPFlushIndirect(pScrn, accel_state->ib); */
++
++    x += 34;
++
++    while( (accel_state->ib)->used & 0x3C ){
++       ib_head[x++] = CP_PACKET2();
++       (accel_state->ib)->used += 4;
++   }
++
++    indirect.idx     = (accel_state->ib)->idx;
++    indirect.start   = start;
++    indirect.end     = (accel_state->ib)->used;
++    indirect.discard = 1;
++
++    drmCommandWriteRead(drmFD, DRM_RADEON_INDIRECT,
++                        &indirect, sizeof(drm_radeon_indirect_t));
+ 
+-    R600CPFlushIndirect(pScrn, accel_state->ib);
+ }
+ 
++
++
+ static void
+ R600AppendCopyVertex(ScrnInfoPtr pScrn,
+ 		     int srcX, int srcY,
+@@ -611,20 +1453,20 @@ R600AppendCopyVertex(ScrnInfoPtr pScrn,
+ 		   (accel_state->ib->total / 2) +
+ 		   accel_state->vb_index * 16);
+ 
+-    vb[0] = (float)dstX;
++/*    vb[0] = (float)dstX; */
+     vb[1] = (float)dstY;
+-    vb[2] = (float)srcX;
++/*    vb[2] = (float)srcX; */
+     vb[3] = (float)srcY;
+ 
+-    vb[4] = (float)dstX;
+-    vb[5] = (float)(dstY + h);
+-    vb[6] = (float)srcX;
+-    vb[7] = (float)(srcY + h);
++    vb[0] = vb[4] = (float)dstX;
++/*    vb[5] = (float)(dstY + h); */
++    vb[2] = vb[6] = (float)srcX;
++/*    vb[7] = (float)(srcY + h); */
+ 
+     vb[8] = (float)(dstX + w);
+-    vb[9] = (float)(dstY + h);
++    vb[5] = vb[9] = (float)(dstY + h);
+     vb[10] = (float)(srcX + w);
+-    vb[11] = (float)(srcY + h);
++    vb[7] = vb[11] = (float)(srcY + h);
+ 
+     accel_state->vb_index += 3;
+ }
+@@ -639,17 +1481,22 @@ R600PrepareCopy(PixmapPtr pSrc,   PixmapPtr pDst,
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+ 
+-    accel_state->dst_pitch = exaGetPixmapPitch(pDst) / (pDst->drawable.bitsPerPixel / 8);
+-    accel_state->src_pitch[0] = exaGetPixmapPitch(pSrc) / (pSrc->drawable.bitsPerPixel / 8);
+ 
+-    accel_state->src_mc_addr[0] = exaGetPixmapOffset(pSrc) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
+     accel_state->dst_mc_addr = exaGetPixmapOffset(pDst) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
++    accel_state->src_mc_addr[0] = exaGetPixmapOffset(pSrc) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
++
++
++
++    accel_state->dst_bpp = pDst->drawable.bitsPerPixel;
++    accel_state->dst_pitch = exaGetPixmapPitch(pDst) / (pDst->drawable.bitsPerPixel / 8);
++
++    accel_state->src_bpp[0] = pSrc->drawable.bitsPerPixel;
++    accel_state->src_pitch[0] = exaGetPixmapPitch(pSrc) / (pSrc->drawable.bitsPerPixel / 8);
+ 
+     accel_state->src_width[0] = pSrc->drawable.width;
+     accel_state->src_height[0] = pSrc->drawable.height;
+-    accel_state->src_bpp[0] = pSrc->drawable.bitsPerPixel;
+     accel_state->dst_height = pDst->drawable.height;
+-    accel_state->dst_bpp = pDst->drawable.bitsPerPixel;
++
+ 
+     /* bad pitch */
+     if (accel_state->src_pitch[0] & 7)
+@@ -1093,6 +1940,7 @@ static Bool R600CheckCompositeTexture(PicturePtr pPict,
+     return TRUE;
+ }
+ 
++
+ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+ 					int unit)
+ {
+@@ -1101,16 +1949,24 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+     int w = pPict->pDrawable->width;
+     int h = pPict->pDrawable->height;
+-    unsigned int i;
+-    tex_resource_t  tex_res;
+-    tex_sampler_t   tex_samp;
++    uint32_t i;
++/*    tex_resource_t  tex_res;
++    tex_sampler_t   tex_samp; */
+     int pix_r, pix_g, pix_b, pix_a;
++int x;
++uint32_t *ib_head;
+ 
+-    CLEAR (tex_res);
+-    CLEAR (tex_samp);
++/*    CLEAR (tex_res); 
++    CLEAR (tex_samp); */
+ 
+-    accel_state->src_pitch[unit] = exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel / 8);
++
++    i = exaGetPixmapPitch(pPix);
++    accel_state->src_pitch[unit] = i /(pPix->drawable.bitsPerPixel / 8);
++    accel_state->src_size[unit] = i * h;
++
++/*    accel_state->src_pitch[unit] = exaGetPixmapPitch(pPix) / (pPix->drawable.bitsPerPixel / 8);
+     accel_state->src_size[unit] = exaGetPixmapPitch(pPix) * h;
++*/
+     accel_state->src_mc_addr[unit] = exaGetPixmapOffset(pPix) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
+ 
+     if (accel_state->src_pitch[1] & 7)
+@@ -1130,20 +1986,31 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+     /* ErrorF("Tex %d setup %dx%d\n", unit, w, h); */
+ 
+     /* flush texture cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++/*    cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+ 			accel_state->src_size[unit], accel_state->src_mc_addr[unit]);
++*/
++
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++
++        ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++        ib_head[x+2] = ( accel_state->src_size[unit] == 0xffffffff ? 0xffffffff :((accel_state->src_size[unit] + 255)>> 8));
++        ib_head[x+3] = accel_state->src_mc_addr[unit] >> 8;
++        ib_head[x+4] = 10;
++/*    (accel_state->ib)->used += 20; */  
+ 
+     /* Texture */
+-    tex_res.id                  = unit;
++/*    tex_res.id                  = unit;
+     tex_res.w                   = w;
+     tex_res.h                   = h;
+     tex_res.pitch               = accel_state->src_pitch[unit];
+-    tex_res.depth               = 0;
++    tex_res.depth               = 0; 
+     tex_res.dim                 = SQ_TEX_DIM_2D;
+     tex_res.base                = accel_state->src_mc_addr[unit];
+     tex_res.mip_base            = accel_state->src_mc_addr[unit];
+     tex_res.format              = R600TexFormats[i].card_fmt;
+-    tex_res.request_size        = 1;
++    tex_res.request_size        = 1; */
+ 
+     /* component swizzles */
+     switch (pPict->format) {
+@@ -1240,17 +2107,50 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+ 	}
+     }
+ 
+-    tex_res.dst_sel_x           = pix_r; /* R */
+-    tex_res.dst_sel_y           = pix_g; /* G */
+-    tex_res.dst_sel_z           = pix_b; /* B */
+-    tex_res.dst_sel_w           = pix_a; /* A */
+-
++/*    tex_res.dst_sel_x           = pix_r;*/  /* R */
++/*    tex_res.dst_sel_y           = pix_g;*/  /* G */
++/*    tex_res.dst_sel_z           = pix_b;*/  /* B */
++/*    tex_res.dst_sel_w           = pix_a;*/  /* A */
++/*
+     tex_res.base_level          = 0;
+     tex_res.last_level          = 0;
+-    tex_res.perf_modulation     = 0;
+-    set_tex_resource            (pScrn, accel_state->ib, &tex_res);
++    tex_res.perf_modulation     = 0; 
++    set_tex_resource            (pScrn, accel_state->ib, &tex_res); 
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+6]= ((SQ_TEX_RESOURCE + unit * SQ_TEX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+7] = (SQ_TEX_DIM_2D << DIM_shift);
++
++    if(w)
++      ib_head[x+7] |= (((((accel_state->src_pitch[unit] + 7) >> 3) - 1) << PITCH_shift) |
++                                  ((w - 1) << TEX_WIDTH_shift));
++
++    ib_head[x+8] = ( R600TexFormats[i].card_fmt << SQ_TEX_RESOURCE_WORD1_0__DATA_FORMAT_shift);
++
++    if(h) 
++      ib_head[x+8] |= ((h - 1) << TEX_HEIGHT_shift);
+ 
+-    tex_samp.id                 = unit;
++    ib_head[x+9] = (accel_state->src_mc_addr[unit]) >> 8;
++    ib_head[x+10] = (accel_state->src_mc_addr[unit]) >> 8;
++    ib_head[x+11] = ((1 << REQUEST_SIZE_shift) |
++                    (pix_r << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_X_shift) |
++                    (pix_g << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Y_shift) |
++                    (pix_b << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_Z_shift) |
++                    (pix_a << SQ_TEX_RESOURCE_WORD4_0__DST_SEL_W_shift));
++
++    ib_head[x+12] = 0;
++    ib_head[x+13] = (SQ_TEX_VTX_VALID_TEXTURE << SQ_TEX_RESOURCE_WORD6_0__TYPE_shift);
++
++
++/*    (accel_state->ib)->used += 52;  */
++
++
++
++
++/*    tex_samp.id                 = unit;
+     tex_samp.border_color       = SQ_TEX_BORDER_COLOR_TRANS_BLACK;
+ 
+     if (pPict->repeat) {
+@@ -1279,6 +2179,7 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+ 	tex_samp.clamp_y = SQ_TEX_CLAMP_BORDER;
+     }
+ 
++
+     switch (pPict->filter) {
+     case PictFilterNearest:
+ 	tex_samp.xy_mag_filter      = SQ_TEX_XY_FILTER_POINT;
+@@ -1293,9 +2194,77 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+     }
+ 
+     tex_samp.clamp_z            = SQ_TEX_WRAP;
+-    tex_samp.z_filter           = SQ_TEX_Z_FILTER_NONE;
+-    tex_samp.mip_filter         = 0;			/* no mipmap */
+-    set_tex_sampler             (pScrn, accel_state->ib, &tex_samp);
++    tex_samp.z_filter           = SQ_TEX_Z_FILTER_NONE; 
++    tex_samp.mip_filter         = 0;	*/		/* no mipmap */
++/*    set_tex_sampler             (pScrn, accel_state->ib, &tex_samp); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_SAMPLER  << 8) | 0x30000;
++    ib_head[x+15]= ((SQ_TEX_SAMPLER_WORD + unit * SQ_TEX_SAMPLER_WORD_offset) - SET_SAMPLER_offset) >> 2;
++
++    if (pPict->repeat) {
++        switch (pPict->repeatType) {
++        case RepeatNormal:
++    	    ib_head[x+16] = ( SQ_TEX_WRAP << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                           ( SQ_TEX_WRAP << CLAMP_Y_shift)                         |
++			   ( SQ_TEX_WRAP << CLAMP_Z_shift)                         |
++                           ( SQ_TEX_Z_FILTER_NONE  << Z_FILTER_shift)       |
++                           ( SQ_TEX_BORDER_COLOR_TRANS_BLACK << BORDER_COLOR_TYPE_shift);
++            break;
++        case RepeatPad:
++    	    ib_head[x+16] = ( SQ_TEX_CLAMP_LAST_TEXEL << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                           ( SQ_TEX_CLAMP_LAST_TEXEL << CLAMP_Y_shift)                         |
++			   ( SQ_TEX_WRAP << CLAMP_Z_shift)                         |
++                           ( SQ_TEX_Z_FILTER_NONE  << Z_FILTER_shift)       |
++                           ( SQ_TEX_BORDER_COLOR_TRANS_BLACK << BORDER_COLOR_TYPE_shift);
++            break;
++        case RepeatReflect:
++    	    ib_head[x+16] = ( SQ_TEX_MIRROR << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                           ( SQ_TEX_MIRROR << CLAMP_Y_shift)                         |
++			   ( SQ_TEX_WRAP << CLAMP_Z_shift)                         |
++                           ( SQ_TEX_Z_FILTER_NONE  << Z_FILTER_shift)       |
++                           ( SQ_TEX_BORDER_COLOR_TRANS_BLACK << BORDER_COLOR_TYPE_shift);
++            break;
++        case RepeatNone:
++    	    ib_head[x+16] = ( SQ_TEX_CLAMP_BORDER << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                           ( SQ_TEX_CLAMP_BORDER << CLAMP_Y_shift)                         |
++			   ( SQ_TEX_WRAP << CLAMP_Z_shift)                         |
++                           ( SQ_TEX_Z_FILTER_NONE  << Z_FILTER_shift)       |
++                           ( SQ_TEX_BORDER_COLOR_TRANS_BLACK << BORDER_COLOR_TYPE_shift);
++            break;
++        default:
++            RADEON_FALLBACK(("Bad repeat 0x%x\n", pPict->repeatType));
++        }
++    } else {
++	ib_head[x+16] = ( SQ_TEX_CLAMP_BORDER << SQ_TEX_SAMPLER_WORD0_0__CLAMP_X_shift) |
++                       ( SQ_TEX_CLAMP_BORDER << CLAMP_Y_shift)                         |
++		       ( SQ_TEX_WRAP << CLAMP_Z_shift)                         |
++                       ( SQ_TEX_Z_FILTER_NONE  << Z_FILTER_shift)       |
++                       ( SQ_TEX_BORDER_COLOR_TRANS_BLACK << BORDER_COLOR_TYPE_shift);
++    }
++
++    switch (pPict->filter) {
++    case PictFilterNearest:
++	ib_head[x+16]  |= ( SQ_TEX_XY_FILTER_POINT << XY_MAG_FILTER_shift)     |
++                         ( SQ_TEX_XY_FILTER_POINT << XY_MIN_FILTER_shift);
++	break;
++    case PictFilterBilinear:
++	ib_head[x+16]  |= ( SQ_TEX_XY_FILTER_BILINEAR << XY_MAG_FILTER_shift)     |
++                         ( SQ_TEX_XY_FILTER_BILINEAR << XY_MIN_FILTER_shift);
++	break;
++    default:
++	RADEON_FALLBACK(("Bad filter 0x%x\n", pPict->filter));
++    }
++    ib_head[x+17] = 0;
++    ib_head[x+18] = 0;
++
++
++    (accel_state->ib)->used += 76;
++
++
++
+ 
+     if (pPict->transform != 0) {
+ 	accel_state->is_transform[unit] = TRUE;
+@@ -1306,6 +2275,8 @@ static Bool R600TextureSetup(PicturePtr pPict, PixmapPtr pPix,
+     return TRUE;
+ }
+ 
++
++
+ static Bool R600CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskPicture,
+ 			       PicturePtr pDstPicture)
+ {
+@@ -1380,92 +2351,144 @@ static Bool R600CheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskP
+ 
+ }
+ 
++
+ static Bool R600PrepareComposite(int op, PicturePtr pSrcPicture,
+-				 PicturePtr pMaskPicture, PicturePtr pDstPicture,
+-				 PixmapPtr pSrc, PixmapPtr pMask, PixmapPtr pDst)
++                                 PicturePtr pMaskPicture, PicturePtr pDstPicture,
++                                 PixmapPtr pSrc, PixmapPtr pMask, PixmapPtr pDst)
+ {
+     ScrnInfoPtr pScrn = xf86Screens[pSrc->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+     uint32_t blendcntl, dst_format;
+-    cb_config_t cb_conf;
+-    shader_config_t vs_conf, ps_conf;
++/*    cb_config_t cb_conf; */
++/*    shader_config_t vs_conf, ps_conf; */
++int x;
++uint32_t *ib_head;
+ 
+     /* return FALSE; */
+ 
+     if (pMask) {
+-	accel_state->has_mask = TRUE;
+-	if (pMaskPicture->componentAlpha) {
+-	    accel_state->component_alpha = TRUE;
+-	    if (R600BlendOp[op].src_alpha)
+-		accel_state->src_alpha = TRUE;
+-	    else
+-		accel_state->src_alpha = FALSE;
+-	} else {
+-	    accel_state->component_alpha = FALSE;
+-	    accel_state->src_alpha = FALSE;
+-	}
++        accel_state->has_mask = TRUE;
++        if (pMaskPicture->componentAlpha) {
++            accel_state->component_alpha = TRUE;
++            if (R600BlendOp[op].src_alpha)
++                accel_state->src_alpha = TRUE;
++            else
++                accel_state->src_alpha = FALSE;
++        } else {
++            accel_state->component_alpha = FALSE;
++            accel_state->src_alpha = FALSE;
++        }
+     } else {
+-	accel_state->has_mask = FALSE;
+-	accel_state->component_alpha = FALSE;
+-	accel_state->src_alpha = FALSE;
++        accel_state->has_mask = FALSE;
++        accel_state->component_alpha = FALSE;
++        accel_state->src_alpha = FALSE;
+     }
+ 
+     accel_state->dst_mc_addr = exaGetPixmapOffset(pDst) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
+-    accel_state->dst_pitch = exaGetPixmapPitch(pDst) / (pDst->drawable.bitsPerPixel / 8);
+-    accel_state->dst_size = exaGetPixmapPitch(pDst) * pDst->drawable.height;
++
++    x = exaGetPixmapPitch(pDst);
++    accel_state->dst_pitch = x / (pDst->drawable.bitsPerPixel / 8);
++    accel_state->dst_size = x * pDst->drawable.height;
+ 
+     if (accel_state->dst_pitch & 7)
+-	RADEON_FALLBACK(("Bad dst pitch 0x%x\n", (int)accel_state->dst_pitch));
++        RADEON_FALLBACK(("Bad dst pitch 0x%x\n", (int)accel_state->dst_pitch));
+ 
+     if (accel_state->dst_mc_addr & 0xff)
+-	RADEON_FALLBACK(("Bad destination offset 0x%x\n", (int)accel_state->dst_mc_addr));
++        RADEON_FALLBACK(("Bad destination offset 0x%x\n", (int)accel_state->dst_mc_addr));
+ 
+     if (!R600GetDestFormat(pDstPicture, &dst_format))
+-	return FALSE;
++        return FALSE;
+ 
+-    CLEAR (cb_conf);
+-    CLEAR (vs_conf);
+-    CLEAR (ps_conf);
++/*    CLEAR (cb_conf); */
++/*    CLEAR (vs_conf);
++    CLEAR (ps_conf); */
+ 
+     accel_state->ib = RHDDRMCPBuffer(pScrn->scrnIndex);
+ 
+-    /* Init */
+-    start_3d(pScrn, accel_state->ib);
++      ib_head = (pointer)(char*)(accel_state->ib)->address;
++      x = (accel_state->ib)->used>>2;
+ 
+-    /* cp_set_surface_sync(pScrn, accel_state->ib); */
++      if (rhdPtr->ChipSet < RHD_RV770) {
++/*      PACK3(ib, IT_START_3D_CMDBUF, 1);
++        E32(ib, 0); */
++
++        ib_head[x] = RADEON_CP_PACKET3 | (IT_START_3D_CMDBUF << 8);
++        ib_head[x+1] = 0x00000000;
++        x+=2;
++        (accel_state->ib)->used += 8;
++      }
+ 
+-    set_default_state(pScrn, accel_state->ib);
++/*    PACK3(ib, IT_CONTEXT_CONTROL, 2);
++    E32(ib, 0x80000000);
++    E32(ib, 0x80000000); */
++
++      ib_head[x] = RADEON_CP_PACKET3 | (0x0001 << 16) | (IT_CONTEXT_CONTROL << 8);
++      ib_head[x+1] = 0x80000000;
++      ib_head[x+2] = 0x80000000;
++/*    ib->used += 12; */
++
++
++
++/*    wait_3d_idle_clean (pScrn, ib); */
++
++      ib_head[x+3] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++      ib_head[x+4] =  CACHE_FLUSH_AND_INV_EVENT;
++      ib_head[x+5] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++      ib_head[x+6] =  0x10;
++      ib_head[x+7] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++
++
++    if (!accel_state->XHas3DEngineState){
++          /* Init */
++         (accel_state->ib)->used += 32;
++          set_default_state(pScrn, accel_state->ib);
++/*          ib_head = (pointer)(char*)(accel_state->ib)->address; */
++          x = ((accel_state->ib)->used>>2) - 8;
++         (accel_state->ib)->used -= 32;
++    }
+ 
+     /* Scissor / viewport */
+-    EREG  (accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
+-    EREG  (accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit);
++/*    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
++    EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+8]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+9]= ( PA_CL_VTE_CNTL - 0x28000) >> 2;
++    ib_head[x+10]=  VTX_XY_FMT_bit;
++    ib_head[x+11]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+12]= ( PA_CL_CLIP_CNTL - 0x28000) >> 2;
++    ib_head[x+13]= CLIP_DISABLE_bit;
++    (accel_state->ib)->used += 56;
++
+ 
+     if (!R600TextureSetup(pSrcPicture, pSrc, 0)) {
+-	R600IBDiscard(pScrn, accel_state->ib);
+-	return FALSE;
++        R600IBDiscard(pScrn, accel_state->ib);
++        return FALSE;
+     }
+ 
+     if (pMask != NULL) {
+-	if (!R600TextureSetup(pMaskPicture, pMask, 1)) {
+-	    R600IBDiscard(pScrn, accel_state->ib);
+-	    return FALSE;
+-	}
++        if (!R600TextureSetup(pMaskPicture, pMask, 1)) {
++            R600IBDiscard(pScrn, accel_state->ib);
++            return FALSE;
++        }
+     } else
+-	accel_state->is_transform[1] = FALSE;
++        accel_state->is_transform[1] = FALSE;
+ 
+     if (pMask) {
+-	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_vs, (1 << 0));
+-	accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	    accel_state->comp_mask_ps_offset;
++        set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_vs, (1 << 0));
++        accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
++            accel_state->comp_mask_ps_offset;
+     } else {
+-	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_vs, (0 << 0));
+-	accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	    accel_state->comp_ps_offset;
++        set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_vs, (0 << 0));
++        accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
++            accel_state->comp_ps_offset;
+     }
+ 
+     accel_state->vs_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+-	accel_state->comp_vs_offset;
++        accel_state->comp_vs_offset;
+ 
+     accel_state->vs_size = 512;
+     accel_state->ps_size = 512;
+@@ -1473,44 +2496,140 @@ static Bool R600PrepareComposite(int op, PicturePtr pSrcPicture,
+     /* Shader */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->vs_size, accel_state->vs_mc_addr);
+-
+-    vs_conf.shader_addr         = accel_state->vs_mc_addr;
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->vs_size, accel_state->vs_mc_addr); */
++    x = (accel_state->ib)->used>>2;
++
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+1] = SH_ACTION_ENA_bit;
++    ib_head[x+2] = (512 + 255)>> 8;
++    ib_head[x+3] = accel_state->vs_mc_addr >> 8;
++    ib_head[x+4] = 10;
++/*    (accel_state->ib)->used += 20; */
++
++/*    vs_conf.shader_addr         = accel_state->vs_mc_addr;
+     vs_conf.num_gprs            = 3;
+     vs_conf.stack_size          = 1;
+-    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++    vs_conf.dx10_clamp          = 0;
++    vs_conf.prime_cache_pgm_en  = 0;
++    vs_conf.prime_cache_on_draw = 0;
++    vs_conf.fetch_cache_lines   = 0;
++    vs_conf.prime_cache_en      = 0;
++    vs_conf.prime_cache_on_const= 0;
++    vs_conf.clamp_consts        = 0;
++    vs_conf.export_mode         = 0;
++    vs_conf.uncached_first_inst = 0; */
++/*    vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+6]= (SQ_PGM_START_VS - 0x28000) >> 2;
++    ib_head[x+7]= accel_state->vs_mc_addr >> 8;
++    ib_head[x+8]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+9]= (SQ_PGM_RESOURCES_VS - 0x28000) >> 2;
++    ib_head[x+10]= (3 << NUM_GPRS_shift) |(1  << STACK_SIZE_shift);
++    ib_head[x+11]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+12]= (SQ_PGM_CF_OFFSET_VS - 0x28000) >> 2;
++    ib_head[x+13]= 0;
++/*    (accel_state->ib)->used += 36; */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->ps_size, accel_state->ps_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++                        accel_state->ps_size, accel_state->ps_mc_addr); */
++
+ 
+-    ps_conf.shader_addr         = accel_state->ps_mc_addr;
++/*    x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+14] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+15] = SH_ACTION_ENA_bit;
++    ib_head[x+16] = (512 + 255)>> 8;
++    ib_head[x+17] = accel_state->ps_mc_addr >> 8;
++    ib_head[x+18] = 10;
++/*    (accel_state->ib)->used += 56; */
++
++/*    ps_conf.shader_addr         = accel_state->ps_mc_addr;
+     ps_conf.num_gprs            = 3;
+     ps_conf.stack_size          = 0;
+-    ps_conf.uncached_first_inst = 1;
++    ps_conf.dx10_clamp          = 0;
++    ps_conf.prime_cache_pgm_en  = 0;
++    ps_conf.prime_cache_on_draw = 0;
++    ps_conf.fetch_cache_lines   = 0;
++    ps_conf.prime_cache_en      = 0;
++    ps_conf.prime_cache_on_const= 0;
+     ps_conf.clamp_consts        = 0;
+     ps_conf.export_mode         = 2;
+-    ps_setup                    (pScrn, accel_state->ib, &ps_conf);
+-
+-    EREG  (accel_state->ib, CB_SHADER_MASK,                      (0xf << OUTPUT0_ENABLE_shift));
++    ps_conf.uncached_first_inst = 1; */
++
++/*    ps_setup                    (pScrn, accel_state->ib, &ps_conf);
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+19]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+20]= (SQ_PGM_START_PS - 0x28000) >> 2;
++    ib_head[x+21]= accel_state->ps_mc_addr >> 8;
++    ib_head[x+22]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+23]= (SQ_PGM_RESOURCES_PS - 0x28000) >> 2;
++    ib_head[x+24]= (3 << NUM_GPRS_shift) | UNCACHED_FIRST_INST_bit;
++    ib_head[x+25]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+26]= (SQ_PGM_EXPORTS_PS - 0x28000) >> 2;
++    ib_head[x+27]= 2;
++    ib_head[x+28]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+29]= (SQ_PGM_CF_OFFSET_PS - 0x28000) >> 2;
++    ib_head[x+30]= 0;
++
++/*    (accel_state->ib)->used += 48; */
++
++
++/*    EREG  (accel_state->ib, CB_SHADER_MASK,                      (0xf << OUTPUT0_ENABLE_shift));
+     EREG  (accel_state->ib, R7xx_CB_SHADER_CONTROL,              (RT0_ENABLE_bit));
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+31]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+32]= ( CB_SHADER_MASK - 0x28000) >> 2;
++    ib_head[x+33]=  (0xf << OUTPUT0_ENABLE_shift);
++    ib_head[x+34]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+35]= ( R7xx_CB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+36]= RT0_ENABLE_bit;
++
+ 
+     blendcntl = R600GetBlendCntl(op, pMaskPicture, pDstPicture->format);
+ 
++
++        ib_head[x+37]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++        ib_head[x+38]= ( CB_COLOR_CONTROL - 0x28000) >> 2;
++
+     if (rhdPtr->ChipSet == RHD_R600) {
+-	/* no per-MRT blend on R600 */
+-	EREG  (accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[3] | (1 << TARGET_BLEND_ENABLE_shift));
+-	EREG  (accel_state->ib, CB_BLEND_CONTROL,                    blendcntl);
++        /* no per-MRT blend on R600 */
++/*      EREG  (accel_state->ib, CB_COLOR_CONTROL,                    RADEON_ROP[3] | (1 << TARGET_BLEND_ENABLE_shift));
++        EREG  (accel_state->ib, CB_BLEND_CONTROL,                    blendcntl);
++*/
++        ib_head[x+39]= RADEON_ROP[3]  | (1 << TARGET_BLEND_ENABLE_shift);
++        ib_head[x+40]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++        ib_head[x+41]= ( CB_BLEND_CONTROL - 0x28000) >> 2;
++
++
+     } else {
+-	EREG  (accel_state->ib, CB_COLOR_CONTROL,                    (RADEON_ROP[3] |
+-								      (1 << TARGET_BLEND_ENABLE_shift) |
+-								      PER_MRT_BLEND_bit));
+-	EREG  (accel_state->ib, CB_BLEND0_CONTROL,                   blendcntl);
++/*      EREG  (accel_state->ib, CB_COLOR_CONTROL,                    (RADEON_ROP[3] |
++                                                                      (1 << TARGET_BLEND_ENABLE_shift) |
++                                                                      PER_MRT_BLEND_bit));
++        EREG  (accel_state->ib, CB_BLEND0_CONTROL,                   blendcntl);
++*/
++        ib_head[x+39]= RADEON_ROP[3]  | (1 << TARGET_BLEND_ENABLE_shift) |  PER_MRT_BLEND_bit;
++        ib_head[x+40]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++        ib_head[x+41]= ( CB_BLEND0_CONTROL - 0x28000) >> 2;
++
+     }
++        ib_head[x+42]= blendcntl;
+ 
+-    cb_conf.id = 0;
+-    cb_conf.w = accel_state->dst_pitch;
++/*    (accel_state->ib)->used += 172; */
++
++
++/*    cb_conf.id = 0; */
++/*    cb_conf.w = accel_state->dst_pitch;
+     cb_conf.h = pDst->drawable.height;
+     cb_conf.base = accel_state->dst_mc_addr;
+     cb_conf.format = dst_format;
+@@ -1521,58 +2640,197 @@ static Bool R600PrepareComposite(int op, PicturePtr pSrcPicture,
+     case PICT_a1r5g5b5:
+     case PICT_x1r5g5b5:
+     default:
+-	cb_conf.comp_swap = 1; /* ARGB */
+-	break;
++        cb_conf.comp_swap = 1; */ /* ARGB */
++/*      break;
+     case PICT_r5g6b5:
+-	cb_conf.comp_swap = 2; /* RGB */
+-	break;
++        cb_conf.comp_swap = 2; */ /* RGB */
++/*      break;
+     case PICT_a8:
+-	cb_conf.comp_swap = 3; /* A */
+-	break;
++        cb_conf.comp_swap = 3; */ /* A */
++/*      break;
+     }
+     cb_conf.source_format = 1;
+     cb_conf.blend_clamp = 1;
+     set_render_target(pScrn, accel_state->ib, &cb_conf);
++*/
++/* x = (accel_state->ib)->used>>2; */
++
++
++    ib_head[x+43]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+44]= ((CB_COLOR0_BASE  - 0x28000) >> 2);
++    ib_head[x+45]= (accel_state->dst_mc_addr >> 8);
++
++    // rv6xx workaround
++    if ((rhdPtr->ChipSet > RHD_R600) &&
++        (rhdPtr->ChipSet < RHD_RV770)) {
++/*      PACK3(ib, IT_SURFACE_BASE_UPDATE, 1);
++        E32(ib, (2 << cb_conf->id)); */
++        ib_head[x+46]= RADEON_CP_PACKET3 | (IT_SURFACE_BASE_UPDATE << 8);
++        ib_head[x+47]= 2;
++
++        x+=2;
++        (accel_state->ib)->used += 8;
++
++    }
++    ib_head[x+46]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+47]= ((CB_COLOR0_SIZE - 0x28000) >> 2);
++    ib_head[x+48]= ((((accel_state->dst_pitch/8)-1) << PITCH_TILE_MAX_shift)     |
++                   ((((accel_state->dst_pitch * ((pDst->drawable.height + 7) & ~7)) / 64) - 1) << SLICE_TILE_MAX_shift));
++
++    ib_head[x+49]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+50]= ((CB_COLOR0_VIEW - 0x28000) >> 2);
++    ib_head[x+51]= 0;
++
++    ib_head[x+52]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+53]= ((CB_COLOR0_INFO - 0x28000) >> 2);
++    switch (pDstPicture->format) {
++    case PICT_a8r8g8b8:
++    case PICT_x8r8g8b8:
++    case PICT_a1r5g5b5:
++    case PICT_x1r5g5b5:
++    default:
++        ib_head[x+54] = ((1 << COMP_SWAP_shift) | (dst_format << CB_COLOR0_INFO__FORMAT_shift) |
++                        BLEND_CLAMP_bit | SOURCE_FORMAT_bit); /* ARGB */
++        break;
++    case PICT_r5g6b5:
++        ib_head[x+54] = ((2 << COMP_SWAP_shift) | (dst_format << CB_COLOR0_INFO__FORMAT_shift) |
++                        BLEND_CLAMP_bit | SOURCE_FORMAT_bit); /* RGB */
++        break;
++    case PICT_a8:
++        ib_head[x+54] = ((3 << COMP_SWAP_shift) | (dst_format << CB_COLOR0_INFO__FORMAT_shift) |
++                        BLEND_CLAMP_bit | SOURCE_FORMAT_bit); /* A */
++        break;
++    }
++
++    ib_head[x+55]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+56]= ((CB_COLOR0_TILE - 0x28000) >> 2);
++    ib_head[x+57]= 0;
++
++    ib_head[x+58]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+59]= ((CB_COLOR0_FRAG - 0x28000) >> 2);
++    ib_head[x+60]= 0;
++
++    ib_head[x+61]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+62]= ((CB_COLOR0_MASK - 0x28000) >> 2);
++    ib_head[x+63]= 0;
++
++/*    (accel_state->ib)->used += 84; */
++
++
++
++/*
++    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit                        |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                                                                (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
++    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)            |*/ /* EARLY_Z_THEN_LATE_Z */
++/*                                                              DUAL_EXPORT_ENABLE_bit)); */ /* Only useful if no depth export */
++
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/* x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+64]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+65]= ( PA_SU_SC_MODE_CNTL - 0x28000) >> 2;
++    ib_head[x+66]=  (FACE_bit                        |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift));
++
++    ib_head[x+67]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+68]= (DB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+69]= ((1 << Z_ORDER_shift)            | /* EARLY_Z_THEN_LATE_Z */
++                  DUAL_EXPORT_ENABLE_bit);  /* Only useful if no depth export */
+ 
+-    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit			|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)	|
+-								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
+-    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)		| /* EARLY_Z_THEN_LATE_Z */
+-								DUAL_EXPORT_ENABLE_bit)); /* Only useful if no depth export */
+ 
+     /* Interpolator setup */
+     if (pMask) {
+-	/* export 2 tex coords from VS */
+-	EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((2 - 1) << VS_EXPORT_COUNT_shift));
+-	/* src = semantic id 0; mask = semantic id 1 */
+-	EREG(accel_state->ib, SPI_VS_OUT_ID_0, ((0 << SEMANTIC_0_shift) |
+-						(1 << SEMANTIC_1_shift)));
+-	/* input 2 tex coords from VS */
+-	EREG(accel_state->ib, SPI_PS_IN_CONTROL_0, (2 << NUM_INTERP_shift));
++        /* export 2 tex coords from VS */
++/*      EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((2 - 1) << VS_EXPORT_COUNT_shift)); */
++        /* src = semantic id 0; mask = semantic id 1 */
++/*      EREG(accel_state->ib, SPI_VS_OUT_ID_0, ((0 << SEMANTIC_0_shift) |
++                                                (1 << SEMANTIC_1_shift))); */
++
++    ib_head[x+70]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+71]= ( SPI_VS_OUT_CONFIG - 0x28000) >> 2;
++    ib_head[x+72]= ((2 - 1) << VS_EXPORT_COUNT_shift);
++
++    ib_head[x+73]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+74]= ( SPI_VS_OUT_ID_0 - 0x28000) >> 2;
++    ib_head[x+75]= (0 << SEMANTIC_0_shift) | (1 << SEMANTIC_1_shift);
++
++
++
++        /* input 2 tex coords from VS */
++/*      EREG(accel_state->ib, SPI_PS_IN_CONTROL_0, (2 << NUM_INTERP_shift)); */
++
++    ib_head[x+76]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+77]= ( SPI_PS_IN_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+78]= (2 << NUM_INTERP_shift);
++
+     } else {
+-	/* export 1 tex coords from VS */
+-	EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((1 - 1) << VS_EXPORT_COUNT_shift));
+-	/* src = semantic id 0 */
+-	EREG(accel_state->ib, SPI_VS_OUT_ID_0,   (0 << SEMANTIC_0_shift));
+-	/* input 1 tex coords from VS */
+-	EREG(accel_state->ib, SPI_PS_IN_CONTROL_0, (1 << NUM_INTERP_shift));
++        /* export 1 tex coords from VS */
++/*      EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((1 - 1) << VS_EXPORT_COUNT_shift)); */
++        /* src = semantic id 0 */
++/*      EREG(accel_state->ib, SPI_VS_OUT_ID_0,   (0 << SEMANTIC_0_shift)); */
++
++    ib_head[x+70]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+71]= ( SPI_VS_OUT_CONFIG - 0x28000) >> 2;
++    ib_head[x+72]= ((1 - 1) << VS_EXPORT_COUNT_shift);
++
++    ib_head[x+73]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+74]= ( SPI_VS_OUT_ID_0 - 0x28000) >> 2;
++    ib_head[x+75]= (0 << SEMANTIC_0_shift);
++
++
++        /* input 1 tex coords from VS */
++/*      EREG(accel_state->ib, SPI_PS_IN_CONTROL_0, (1 << NUM_INTERP_shift)); */
++
++    ib_head[x+76]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+77]= ( SPI_PS_IN_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+78]= (1 << NUM_INTERP_shift);
++
+     }
+-    EREG(accel_state->ib, SPI_PS_IN_CONTROL_1,                 0);
+-    /* SPI_PS_INPUT_CNTL_0 maps to GPR[0] - load with semantic id 0 */
+-    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)	|
+-								(0x01 << DEFAULT_VAL_shift)	|
+-								SEL_CENTROID_bit));
+-    /* SPI_PS_INPUT_CNTL_1 maps to GPR[1] - load with semantic id 1 */
+-    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (1 <<2),       ((1    << SEMANTIC_shift)	|
+-								(0x01 << DEFAULT_VAL_shift)	|
+-								SEL_CENTROID_bit));
++/*    EREG(accel_state->ib, SPI_PS_IN_CONTROL_1,                 0);
++*/    /* SPI_PS_INPUT_CNTL_0 maps to GPR[0] - load with semantic id 0 */
++/*    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)      |
++                                                                (0x01 << DEFAULT_VAL_shift)     |
++                                                                SEL_CENTROID_bit));
++*/    /* SPI_PS_INPUT_CNTL_1 maps to GPR[1] - load with semantic id 1 */
++/*    EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (1 <<2),       ((1    << SEMANTIC_shift)      |
++                                                                (0x01 << DEFAULT_VAL_shift)     |
++                                                                SEL_CENTROID_bit));
+     EREG(accel_state->ib, SPI_INTERP_CONTROL_0,                0);
++*/
++
++    ib_head[x+79]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+80]= (SPI_PS_IN_CONTROL_1 - 0x28000) >> 2;
++    ib_head[x+81]= 0;
++
++    ib_head[x+82]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+83]= ( SPI_PS_INPUT_CNTL_0 + (0 <<2) - 0x28000) >> 2;
++    ib_head[x+84]=  ((0    << SEMANTIC_shift)      |
++                    (0x01 << DEFAULT_VAL_shift)     |
++                    SEL_CENTROID_bit);
++
++    ib_head[x+85]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+86]= ( SPI_PS_INPUT_CNTL_0 + (1 << 2)  - 0x28000) >> 2;
++    ib_head[x+87]=  ((1    << SEMANTIC_shift)      |
++                    (0x01 << DEFAULT_VAL_shift)     |
++                    SEL_CENTROID_bit);
++
++
++    ib_head[x+88]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+89]= (SPI_INTERP_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+90]= 0;
++
++    (accel_state->ib)->used += 364;
++
+ 
+     accel_state->vb_index = 0;
+ 
+     return TRUE;
+ }
+ 
++
+ static void R600Composite(PixmapPtr pDst,
+ 			  int srcX, int srcY,
+ 			  int maskX, int maskY,
+@@ -1588,14 +2846,14 @@ static void R600Composite(PixmapPtr pDst,
+     /* ErrorF("R600Composite (%d,%d) (%d,%d) (%d,%d) (%d,%d)\n",
+        srcX, srcY, maskX, maskY,dstX, dstY, w, h); */
+ 
+-    srcTopLeft.x     = IntToxFixed(srcX);
+-    srcTopLeft.y     = IntToxFixed(srcY);
+-    srcTopRight.x    = IntToxFixed(srcX + w);
+-    srcTopRight.y    = IntToxFixed(srcY);
+-    srcBottomLeft.x  = IntToxFixed(srcX);
+-    srcBottomLeft.y  = IntToxFixed(srcY + h);
+-    srcBottomRight.x = IntToxFixed(srcX + w);
+-    srcBottomRight.y = IntToxFixed(srcY + h);
++/*    srcTopLeft.x     = IntToxFixed(srcX); */
++/*    srcTopLeft.y     = IntToxFixed(srcY); */
++/*    srcTopRight.x    = IntToxFixed(srcX + w); */
++    srcTopLeft.x     = srcBottomLeft.x  = IntToxFixed(srcX);
++/*    srcBottomLeft.y  = IntToxFixed(srcY + h); */
++    srcTopRight.x    = srcBottomRight.x = IntToxFixed(srcX + w);
++    srcTopLeft.y     = srcTopRight.y    = IntToxFixed(srcY);
++    srcBottomLeft.y  = srcBottomRight.y = IntToxFixed(srcY + h);
+ 
+     /* XXX do transform in vertex shader */
+     if (accel_state->is_transform[0]) {
+@@ -1618,21 +2876,21 @@ static void R600Composite(PixmapPtr pDst,
+ 		       (accel_state->ib->total / 2) +
+ 		       accel_state->vb_index * 24);
+ 
+-	maskTopLeft.x     = IntToxFixed(maskX);
+-	maskTopLeft.y     = IntToxFixed(maskY);
+-	maskTopRight.x    = IntToxFixed(maskX + w);
+-	maskTopRight.y    = IntToxFixed(maskY);
+-	maskBottomLeft.x  = IntToxFixed(maskX);
+-	maskBottomLeft.y  = IntToxFixed(maskY + h);
+-	maskBottomRight.x = IntToxFixed(maskX + w);
+-	maskBottomRight.y = IntToxFixed(maskY + h);
++/*	maskTopLeft.x     = IntToxFixed(maskX); */
++	maskTopLeft.x     = maskBottomLeft.x  = IntToxFixed(maskX);
++	maskBottomRight.x = maskTopRight.x    = IntToxFixed(maskX + w);
++/*	maskTopLeft.y     = IntToxFixed(maskY);*/
++	maskTopLeft.y     = maskTopRight.y    = IntToxFixed(maskY);
++/*	maskBottomLeft.y  = IntToxFixed(maskY + h); */ 
++/*	maskBottomRight.x = IntToxFixed(maskX + w); */
++	maskBottomLeft.y  = maskBottomRight.y = IntToxFixed(maskY + h);
+ 
+ 	if (accel_state->is_transform[1]) {
+ 	    transformPoint(accel_state->transform[1], &maskTopLeft);
+ 	    transformPoint(accel_state->transform[1], &maskTopRight);
+ 	    transformPoint(accel_state->transform[1], &maskBottomLeft);
+ 	    transformPoint(accel_state->transform[1], &maskBottomRight);
+-	}
++        }
+ 
+ 	vb[0] = (float)dstX;
+ 	vb[1] = (float)dstY;
+@@ -1642,14 +2900,14 @@ static void R600Composite(PixmapPtr pDst,
+ 	vb[5] = xFixedToFloat(maskTopLeft.y) / accel_state->texH[1];
+ 
+ 	vb[6] = (float)dstX;
+-	vb[7] = (float)(dstY + h);
++/*	vb[7] = (float)(dstY + h); */
+ 	vb[8] = xFixedToFloat(srcBottomLeft.x) / accel_state->texW[0];
+ 	vb[9] = xFixedToFloat(srcBottomLeft.y) / accel_state->texH[0];
+ 	vb[10] = xFixedToFloat(maskBottomLeft.x) / accel_state->texW[1];
+ 	vb[11] = xFixedToFloat(maskBottomLeft.y) / accel_state->texH[1];
+ 
+ 	vb[12] = (float)(dstX + w);
+-	vb[13] = (float)(dstY + h);
++	vb[7] = vb[13] = (float)(dstY + h);
+ 	vb[14] = xFixedToFloat(srcBottomRight.x) / accel_state->texW[0];
+ 	vb[15] = xFixedToFloat(srcBottomRight.y) / accel_state->texH[0];
+ 	vb[16] = xFixedToFloat(maskBottomRight.x) / accel_state->texW[1];
+@@ -1666,12 +2924,12 @@ static void R600Composite(PixmapPtr pDst,
+ 	vb[3] = xFixedToFloat(srcTopLeft.y) / accel_state->texH[0];
+ 
+ 	vb[4] = (float)dstX;
+-	vb[5] = (float)(dstY + h);
++/*	vb[5] = (float)(dstY + h); */
+ 	vb[6] = xFixedToFloat(srcBottomLeft.x) / accel_state->texW[0];
+ 	vb[7] = xFixedToFloat(srcBottomLeft.y) / accel_state->texH[0];
+ 
+ 	vb[8] = (float)(dstX + w);
+-	vb[9] = (float)(dstY + h);
++	vb[5] = vb[9] = (float)(dstY + h);
+ 	vb[10] = xFixedToFloat(srcBottomRight.x) / accel_state->texW[0];
+ 	vb[11] = xFixedToFloat(srcBottomRight.y) / accel_state->texH[0];
+     }
+@@ -1685,11 +2943,16 @@ static void R600DoneComposite(PixmapPtr pDst)
+     ScrnInfoPtr pScrn = xf86Screens[pDst->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+-    draw_config_t   draw_conf;
+-    vtx_resource_t  vtx_res;
++/*    draw_config_t   draw_conf; */
++/*    vtx_resource_t  vtx_res; */
++int x;
++uint32_t *ib_head;
++    int                start  = 0;
++    drm_radeon_indirect_t  indirect;
++    int drmFD = RHDDRMFDGet(pScrn->scrnIndex);
+ 
+-    CLEAR (draw_conf);
+-    CLEAR (vtx_res);
++/*    CLEAR (draw_conf); */
++/*    CLEAR (vtx_res); */
+ 
+     if (accel_state->vb_index == 0) {
+ 	R600IBDiscard(pScrn, accel_state->ib);
+@@ -1701,51 +2964,147 @@ static void R600DoneComposite(PixmapPtr pDst)
+ 
+ 
+     /* Vertex buffer setup */
+-    if (accel_state->has_mask) {
+-	accel_state->vb_size = accel_state->vb_index * 24;
+-	vtx_res.id              = SQ_VTX_RESOURCE_vs;
+-	vtx_res.vtx_size_dw     = 24 / 4;
+-	vtx_res.vtx_num_entries = accel_state->vb_size / 4;
+-	vtx_res.mem_req_size    = 1;
+-	vtx_res.vb_addr         = accel_state->vb_mc_addr;
++/*    if (accel_state->has_mask) {
++        accel_state->vb_size = accel_state->vb_index * 24;
++        vtx_res.id              = SQ_VTX_RESOURCE_vs;
++        vtx_res.vtx_size_dw     = 24 / 4;
++        vtx_res.vtx_num_entries = accel_state->vb_size / 4;
++        vtx_res.mem_req_size    = 1;
++        vtx_res.vb_addr         = accel_state->vb_mc_addr; 
+     } else {
+-	accel_state->vb_size = accel_state->vb_index * 16;
+-	vtx_res.id              = SQ_VTX_RESOURCE_vs;
+-	vtx_res.vtx_size_dw     = 16 / 4;
+-	vtx_res.vtx_num_entries = accel_state->vb_size / 4;
+-	vtx_res.mem_req_size    = 1;
+-	vtx_res.vb_addr         = accel_state->vb_mc_addr;
++        accel_state->vb_size = accel_state->vb_index * 16;
++      vtx_res.id              = SQ_VTX_RESOURCE_vs;
++        vtx_res.vtx_size_dw     = 16 / 4;
++        vtx_res.vtx_num_entries = accel_state->vb_size / 4;
++        vtx_res.mem_req_size    = 1;
++        vtx_res.vb_addr         = accel_state->vb_mc_addr; 
+     }
++*/
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++
+     /* flush vertex cache */
+-    if ((rhdPtr->ChipSet == RHD_RV610) ||
+-	(rhdPtr->ChipSet == RHD_RV620) ||
+-	(rhdPtr->ChipSet == RHD_M72) ||
+-	(rhdPtr->ChipSet == RHD_M74) ||
+-	(rhdPtr->ChipSet == RHD_M82) ||
+-	(rhdPtr->ChipSet == RHD_RS780) ||
+-	(rhdPtr->ChipSet == RHD_RV710))
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
+-    else
+-	cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
+-			    accel_state->vb_size, accel_state->vb_mc_addr);
++ /*   if ((rhdPtr->ChipSet == RHD_RV610) ||
++        (rhdPtr->ChipSet == RHD_RV620) ||
++        (rhdPtr->ChipSet == RHD_M72) ||
++        (rhdPtr->ChipSet == RHD_M74) ||
++        (rhdPtr->ChipSet == RHD_M82) ||
++        (rhdPtr->ChipSet == RHD_RS780) ||
++        (rhdPtr->ChipSet == RHD_RV710)) { */
++
++     if (accel_state->Virtex_Flush_Quirk) {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++    } else {
++/*      cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
++                            accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++        ib_head[x+1] = VC_ACTION_ENA_bit;
++    }
++/*    ib_head[x+2] = ( accel_state->vb_size == 0xffffffff ? 0xffffffff :((accel_state->vb_size + 255)>> 8)); */
++    ib_head[x+3] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+4] = 10;
+ 
+-    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res);
++/*    (accel_state->ib)->used += 20;   */
++
++
++/*    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res); */
+ 
+-    draw_conf.prim_type          = DI_PT_RECTLIST;
++
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+6]= ((SQ_VTX_RESOURCE + SQ_VTX_RESOURCE_vs * SQ_VTX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+7] = accel_state->vb_mc_addr & 0xffffffff;
++    if (accel_state->has_mask) {
++/*      accel_state->vb_size = accel_state->vb_index * 24; */
++      ib_head[x+8] = (accel_state->vb_size = accel_state->vb_index * 24) - 1;
++      ib_head[x+9] = (((accel_state->vb_mc_addr >> 32)& BASE_ADDRESS_HI_mask) |
++                     (24 << SQ_VTX_CONSTANT_WORD2_0__STRIDE_shift));
++    } else {
++/*      accel_state->vb_size = accel_state->vb_index * 16; */ 
++      ib_head[x+8] = (accel_state->vb_size = accel_state->vb_index * 16) - 1;
++      ib_head[x+9] = (((accel_state->vb_mc_addr >> 32)& BASE_ADDRESS_HI_mask) |
++                     (16 << SQ_VTX_CONSTANT_WORD2_0__STRIDE_shift) );
++    }
++    ib_head[x+2] = ( accel_state->vb_size == 0xffffffff ? 0xffffffff :((accel_state->vb_size + 255)>> 8));
++    ib_head[x+10] = 1 << MEM_REQUEST_SIZE_shift;
++    ib_head[x+11] = 0;
++    ib_head[x+12] = 0;
++    ib_head[x+13] = SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift;
++
++/*    (accel_state->ib)->used += 56; */
++
++/*    draw_conf.prim_type          = DI_PT_RECTLIST;
+     draw_conf.vgt_draw_initiator = DI_SRC_SEL_AUTO_INDEX;
+     draw_conf.num_instances      = 1;
+     draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw;
+-    draw_conf.index_type         = DI_INDEX_SIZE_16_BIT;
++    draw_conf.index_type         = DI_INDEX_SIZE_16_BIT; */
+ 
+-    draw_auto(pScrn, accel_state->ib, &draw_conf);
++/*    draw_auto(pScrn, accel_state->ib, &draw_conf); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++
++/*  x = (accel_state->ib)->used>>2; */
++ ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;
++ ib_head[x+15]= (((VGT_PRIMITIVE_TYPE) - SET_CONFIG_REG_offset) >> 2);
++ ib_head[x+16]= DI_PT_RECTLIST;
++
++ ib_head[x+17] = RADEON_CP_PACKET3 | IT_INDEX_TYPE << 8;
++ ib_head[x+18] = DI_INDEX_SIZE_16_BIT;
++ ib_head[x+19] = RADEON_CP_PACKET3 | IT_NUM_INSTANCES << 8;
++ ib_head[x+20] = 1;
++ ib_head[x+21] = RADEON_CP_PACKET3 | (IT_DRAW_INDEX_AUTO << 8) | 0x10000;
++
++/*   if (accel_state->has_mask) { */
++      ib_head[x+22] = accel_state->vb_index;
++/* vtx_res.vtx_num_entries / vtx_res.vtx_size_dw; */
++/*   } else {
++      ib_head[x+22] = accel_state->vb_index;
++     } */
++
++ ib_head[x+23] = DI_SRC_SEL_AUTO_INDEX;
++/*    (accel_state->ib)->used += 40; */
+ 
+-    wait_3d_idle_clean(pScrn, accel_state->ib);
++/*    wait_3d_idle_clean(pScrn, accel_state->ib); */
++    ib_head[x+24] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+25] =  CACHE_FLUSH_AND_INV_EVENT;
++    ib_head[x+26] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+27] =  0x10;
++    ib_head[x+28] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++/*   (accel_state->ib)->used += 60; */
+ 
+-    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
++
++/*    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
+ 			accel_state->dst_size, accel_state->dst_mc_addr);
++*/
++        ib_head[x+29] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+30] = (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit);
++        ib_head[x+31] = ( accel_state->dst_size == 0xffffffff ? 0xffffffff :((accel_state->dst_size + 255)>> 8));
++        ib_head[x+32] = accel_state->dst_mc_addr >> 8;
++        ib_head[x+33] = 10;
++    (accel_state->ib)->used += 136;
++
++/*    R600CPFlushIndirect(pScrn, accel_state->ib); */
++
++    x += 34;
++
++    while( (accel_state->ib)->used & 0x3C ){
++       ib_head[x++] = CP_PACKET2();
++       (accel_state->ib)->used += 4;
++   }
++
++    indirect.idx     = (accel_state->ib)->idx;
++    indirect.start   = start;
++    indirect.end     = (accel_state->ib)->used;
++    indirect.discard = 1;
++
++    drmCommandWriteRead(drmFD, DRM_RADEON_INDIRECT,
++                        &indirect, sizeof(drm_radeon_indirect_t));
+ 
+-    R600CPFlushIndirect(pScrn, accel_state->ib);
+ }
+ 
+ Bool
+@@ -1756,10 +3115,10 @@ R600CopyToVRAM(ScrnInfoPtr pScrn,
+ {
+     struct RhdCS *CS = RHDPTR(pScrn)->CS;
+     uint32_t scratch_mc_addr;
+-    int wpass = w * (bpp/8);
++    int scratch_offset = 0, hpass, temph = bpp/8;
++    int wpass = w * temph;
+     int scratch_pitch_bytes = (wpass + 255) & ~255;
+-    uint32_t scratch_pitch = scratch_pitch_bytes / (bpp / 8);
+-    int scratch_offset = 0, hpass, temph;
++    uint32_t scratch_pitch = scratch_pitch_bytes / temph;
+     char *dst;
+     drmBufPtr scratch;
+ 
+@@ -1823,10 +3182,10 @@ R600UploadToScreen(PixmapPtr pDst, int x, int y, int w, int h,
+ {
+     ScrnInfoPtr pScrn = xf86Screens[pDst->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+-    uint32_t dst_pitch = exaGetPixmapPitch(pDst) / (pDst->drawable.bitsPerPixel / 8);
+-    uint32_t dst_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + exaGetPixmapOffset(pDst);
+     uint32_t dst_height = pDst->drawable.height;
+     int bpp = pDst->drawable.bitsPerPixel;
++    uint32_t dst_pitch = exaGetPixmapPitch(pDst) / (bpp / 8);
++    uint32_t dst_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + exaGetPixmapOffset(pDst);
+ 
+     return R600CopyToVRAM(pScrn,
+ 			  src, src_pitch,
+@@ -1841,16 +3200,16 @@ R600DownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h,
+     ScrnInfoPtr pScrn = xf86Screens[pSrc->drawable.pScreen->myNum];
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct RhdCS *CS = rhdPtr->CS;
+-    uint32_t src_pitch = exaGetPixmapPitch(pSrc) / (pSrc->drawable.bitsPerPixel / 8);
+-    uint32_t src_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + exaGetPixmapOffset(pSrc);
+     uint32_t src_width = pSrc->drawable.width;
+     uint32_t src_height = pSrc->drawable.height;
+     int bpp = pSrc->drawable.bitsPerPixel;
+-    uint32_t scratch_mc_addr;
+     int scratch_pitch_bytes = (dst_pitch + 255) & ~255;
+-    int scratch_offset = 0, hpass;
+-    uint32_t scratch_pitch = scratch_pitch_bytes / (bpp / 8);
+-    int wpass = w * (bpp/8);
++    int scratch_offset = 0, hpass = bpp/8;
++    uint32_t scratch_pitch = scratch_pitch_bytes / hpass;
++    int wpass = w * hpass;
++    uint32_t src_pitch = exaGetPixmapPitch(pSrc) / hpass;
++    uint32_t src_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + exaGetPixmapOffset(pSrc);
++    uint32_t scratch_mc_addr;
+     drmBufPtr scratch;
+ 
+     if (src_pitch & 7)
+diff --git a/src/r600_state.h b/src/r600_state.h
+index 77b852f..d67fb20 100644
+--- a/src/r600_state.h
++++ b/src/r600_state.h
+@@ -204,40 +204,96 @@ do {                                                                    \
+ /* If register falls in a special area, special commands are issued */
+ #define PACK0(ib, reg, num)                                             \
+ do {                                                                    \
++    uint32_t *ib_headx = (pointer)(char*)(ib)->address;			\
++    uint32_t ib_head_index = ((ib)->used >> 2);			\
+     if ((reg) >= SET_CONFIG_REG_offset && (reg) < SET_CONFIG_REG_end) {	\
+-	PACK3((ib), IT_SET_CONFIG_REG, (num) + 1);			\
+-        E32(ib, ((reg) - SET_CONFIG_REG_offset) >> 2);                  \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | (num)<<16;		\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_CONFIG_REG_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_CONTEXT_REG_offset && (reg) < SET_CONTEXT_REG_end) { \
+-        PACK3((ib), IT_SET_CONTEXT_REG, (num) + 1);			\
+-	E32(ib, ((reg) - 0x28000) >> 2);				\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - 0x28000) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_ALU_CONST_offset && (reg) < SET_ALU_CONST_end) { \
+-	PACK3((ib), IT_SET_ALU_CONST, (num) + 1);			\
+-	E32(ib, ((reg) - SET_ALU_CONST_offset) >> 2);			\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_ALU_CONST << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_ALU_CONST_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_RESOURCE_offset && (reg) < SET_RESOURCE_end) { \
+-	PACK3((ib), IT_SET_RESOURCE, num + 1);				\
+-	E32((ib), ((reg) - SET_RESOURCE_offset) >> 2);			\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_RESOURCE_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_SAMPLER_offset && (reg) < SET_SAMPLER_end) { \
+-	PACK3((ib), IT_SET_SAMPLER, (num) + 1);				\
+-	E32((ib), (reg - SET_SAMPLER_offset) >> 2);			\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | ( IT_SET_SAMPLER << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_SAMPLER_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_CTL_CONST_offset && (reg) < SET_CTL_CONST_end) { \
+-	PACK3((ib), IT_SET_CTL_CONST, (num) + 1);			\
+-	E32((ib), ((reg) - SET_CTL_CONST_offset) >> 2);		\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CTL_CONST << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_CTL_CONST_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_LOOP_CONST_offset && (reg) < SET_LOOP_CONST_end) { \
+-	PACK3((ib), IT_SET_LOOP_CONST, (num) + 1);			\
+-	E32((ib), ((reg) - SET_LOOP_CONST_offset) >> 2);		\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_LOOP_CONST << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_LOOP_CONST_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else if ((reg) >= SET_BOOL_CONST_offset && (reg) < SET_BOOL_CONST_end) { \
+-	PACK3((ib), IT_SET_BOOL_CONST, (num) + 1);			\
+-	E32((ib), ((reg) - SET_BOOL_CONST_offset) >> 2);		\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_BOOL_CONST << 8) | (num)<<16;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_BOOL_CONST_offset) >> 2);                  \
++        (ib)->used += 8;         \
+     } else {								\
+-	E32((ib), CP_PACKET0 ((reg), (num)));				\
++        ib_headx[ib_head_index]= CP_PACKET0 ((reg), (num));		\
++        (ib)->used += 4;         \
+     }									\
+ } while (0)
+ 
+ /* write a single register */
+ #define EREG(ib, reg, val)                                              \
+ do {								        \
+-    PACK0((ib), (reg), 1);						\
+-    E32((ib), (val));							\
++    uint32_t *ib_headx = (pointer)(char*)(ib)->address;			\
++    uint32_t ib_head_index = ((ib)->used >> 2);			\
++    if ((reg) >= SET_CONFIG_REG_offset && (reg) < SET_CONFIG_REG_end) {	\
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_CONFIG_REG_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_CONTEXT_REG_offset && (reg) < SET_CONTEXT_REG_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - 0x28000) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_ALU_CONST_offset && (reg) < SET_ALU_CONST_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_ALU_CONST << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_ALU_CONST_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_RESOURCE_offset && (reg) < SET_RESOURCE_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_RESOURCE_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_SAMPLER_offset && (reg) < SET_SAMPLER_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | ( IT_SET_SAMPLER << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_SAMPLER_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_CTL_CONST_offset && (reg) < SET_CTL_CONST_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_CTL_CONST << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_CTL_CONST_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_LOOP_CONST_offset && (reg) < SET_LOOP_CONST_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_LOOP_CONST << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_LOOP_CONST_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else if ((reg) >= SET_BOOL_CONST_offset && (reg) < SET_BOOL_CONST_end) { \
++	ib_headx[ib_head_index]= RADEON_CP_PACKET3 | (IT_SET_BOOL_CONST << 8) | 0x10000;			\
++        ib_headx[ib_head_index + 1]= (((reg) - SET_BOOL_CONST_offset) >> 2);                  \
++        ib_headx[ib_head_index + 2]= (val);       \
++        (ib)->used += 12;         \
++    } else {								\
++	ib_headx[ib_head_index]=  CP_PACKET0 ((reg),1);			\
++        ib_headx[ib_head_index + 1]= (val);       \
++        (ib)->used += 8;         \
++    }									\
+ } while (0)
+ 
+ void R600CPFlushIndirect(ScrnInfoPtr pScrn, drmBufPtr ib);
+diff --git a/src/r600_textured_videofuncs.c b/src/r600_textured_videofuncs.c
+index 96f5885..6d7edb2 100644
+--- a/src/r600_textured_videofuncs.c
++++ b/src/r600_textured_videofuncs.c
+@@ -48,6 +48,15 @@
+ #  include "damage.h"
+ # endif
+ 
++#include "xf86drm.h"
++/* Workaround for header mismatches */
++#ifndef DEPRECATED
++# define DEPRECATED __attribute__ ((deprecated))
++# define __user
++#endif
++#include "radeon_drm.h"
++
++
+ /* seriously ?! @#$%% */
+ # define uint32_t CARD32
+ # define uint64_t CARD64
+@@ -57,11 +66,16 @@ R600DoneTexturedVideo(ScrnInfoPtr pScrn)
+ {
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct r6xx_accel_state *accel_state = rhdPtr->TwoDPrivate;
+-    draw_config_t   draw_conf;
+-    vtx_resource_t  vtx_res;
++/*    draw_config_t   draw_conf; */
++/*    vtx_resource_t  vtx_res; */
++int x;
++uint32_t *ib_head;
++    int                start  = 0;
++    drm_radeon_indirect_t  indirect;
++    int drmFD = RHDDRMFDGet(pScrn->scrnIndex);
+ 
+-    CLEAR (draw_conf);
+-    CLEAR (vtx_res);
++/*    CLEAR (draw_conf); */
++/*    CLEAR (vtx_res); */
+ 
+     if (accel_state->vb_index == 0) {
+ 	R600IBDiscard(pScrn, accel_state->ib);
+@@ -72,43 +86,132 @@ R600DoneTexturedVideo(ScrnInfoPtr pScrn)
+ 	(accel_state->ib->idx * accel_state->ib->total) + (accel_state->ib->total / 2);
+     accel_state->vb_size = accel_state->vb_index * 16;
+ 
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++
+     /* flush vertex cache */
+-    if ((rhdPtr->ChipSet == RHD_RV610) ||
+-	(rhdPtr->ChipSet == RHD_RV620) ||
+-	(rhdPtr->ChipSet == RHD_M72) ||
+-	(rhdPtr->ChipSet == RHD_M74) ||
+-	(rhdPtr->ChipSet == RHD_M82) ||
+-	(rhdPtr->ChipSet == RHD_RS780) ||
+-	(rhdPtr->ChipSet == RHD_RV710))
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++ /*   if ((rhdPtr->ChipSet == RHD_RV610) ||
++        (rhdPtr->ChipSet == RHD_RV620) ||
++        (rhdPtr->ChipSet == RHD_M72) ||
++        (rhdPtr->ChipSet == RHD_M74) ||
++        (rhdPtr->ChipSet == RHD_M82) ||
++        (rhdPtr->ChipSet == RHD_RS780) ||
++        (rhdPtr->ChipSet == RHD_RV710)) { */
++
++     if (accel_state->Virtex_Flush_Quirk) {
++/*	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+ 			    accel_state->vb_size, accel_state->vb_mc_addr);
+-    else
+-	cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
++*/
++       ib_head[x+1] = TC_ACTION_ENA_bit;
++    } else {
++/*	cp_set_surface_sync(pScrn, accel_state->ib, VC_ACTION_ENA_bit,
+ 			    accel_state->vb_size, accel_state->vb_mc_addr);
++*/
++       ib_head[x+1] = VC_ACTION_ENA_bit;
++    }
++    ib_head[x+2] = ( accel_state->vb_size == 0xffffffff ? 0xffffffff :((accel_state->vb_size + 255)>> 8));
++    ib_head[x+3] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+4] = 10;
++/*    (accel_state->ib)->used += 20; */
++
+ 
+     /* Vertex buffer setup */
+-    vtx_res.id              = SQ_VTX_RESOURCE_vs;
++/*    vtx_res.id              = SQ_VTX_RESOURCE_vs;
+     vtx_res.vtx_size_dw     = 16 / 4;
+     vtx_res.vtx_num_entries = accel_state->vb_size / 4;
+     vtx_res.mem_req_size    = 1;
+     vtx_res.vb_addr         = accel_state->vb_mc_addr;
+-    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res);
++    set_vtx_resource        (pScrn, accel_state->ib, &vtx_res); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+5]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+6]= ((SQ_VTX_RESOURCE + SQ_VTX_RESOURCE_vs * SQ_VTX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+7] = accel_state->vb_mc_addr & 0xffffffff;
++    ib_head[x+8] = ( accel_state->vb_size ) - 1;
++    ib_head[x+9] = (((accel_state->vb_mc_addr >> 32)  & BASE_ADDRESS_HI_mask) |
++                   (16 << SQ_VTX_CONSTANT_WORD2_0__STRIDE_shift));
++    ib_head[x+10] = 1 << MEM_REQUEST_SIZE_shift;
++    ib_head[x+11] = 0;
++    ib_head[x+12] = 0;
++    ib_head[x+13] = SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift;
++
+ 
++/*    (accel_state->ib)->used += 36; */
++
++
++
++/*
+     draw_conf.prim_type          = DI_PT_RECTLIST;
+     draw_conf.vgt_draw_initiator = DI_SRC_SEL_AUTO_INDEX;
+     draw_conf.num_instances      = 1;
+     draw_conf.num_indices        = vtx_res.vtx_num_entries / vtx_res.vtx_size_dw;
+     draw_conf.index_type         = DI_INDEX_SIZE_16_BIT;
+ 
+-    draw_auto(pScrn, accel_state->ib, &draw_conf);
++    draw_auto(pScrn, accel_state->ib, &draw_conf); */
++
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++*/
++
++ ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;
++ ib_head[x+15]= (((VGT_PRIMITIVE_TYPE) - SET_CONFIG_REG_offset) >> 2);
++ ib_head[x+16]= DI_PT_RECTLIST;
++
++ ib_head[x+17] = RADEON_CP_PACKET3 | IT_INDEX_TYPE << 8;
++ ib_head[x+18] = DI_INDEX_SIZE_16_BIT;
++ ib_head[x+19] = RADEON_CP_PACKET3 | IT_NUM_INSTANCES << 8;
++ ib_head[x+20] = 1;
++ ib_head[x+21] = RADEON_CP_PACKET3 | (IT_DRAW_INDEX_AUTO << 8) | 0x10000;
++ ib_head[x+22] = accel_state->vb_index; /*accel_state->vb_size / 16; */
++ ib_head[x+23] = DI_SRC_SEL_AUTO_INDEX;
++
++
++/*    (accel_state->ib)->used += 96; */
+ 
+-    wait_3d_idle_clean(pScrn, accel_state->ib);
+ 
++
++/*    wait_3d_idle_clean(pScrn, accel_state->ib);
++*/
++
++    ib_head[x+24] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+25] =  CACHE_FLUSH_AND_INV_EVENT;
++    ib_head[x+26] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+27] =  0x10;
++    ib_head[x+28] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
+     /* sync destination surface */
+-    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
++/*    cp_set_surface_sync(pScrn, accel_state->ib, (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit),
+ 			accel_state->dst_size, accel_state->dst_mc_addr);
++*/
++    ib_head[x+29] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+30] = (CB_ACTION_ENA_bit | CB0_DEST_BASE_ENA_bit);
++    ib_head[x+31] = ( accel_state->dst_size == 0xffffffff ? 0xffffffff :((accel_state->dst_size   + 255)>> 8));
++    ib_head[x+32] = accel_state->vb_mc_addr >> 8;
++    ib_head[x+33] = 10;
++
++    (accel_state->ib)->used += 136;
++
++
++/*    R600CPFlushIndirect(pScrn, accel_state->ib); */
++
++    x += 34;
++
++    while( (accel_state->ib)->used & 0x3C ){
++       ib_head[x++] = CP_PACKET2();
++       (accel_state->ib)->used += 4;
++   }
++
++    indirect.idx     = (accel_state->ib)->idx;
++    indirect.start   = start;
++    indirect.end     = (accel_state->ib)->used;
++    indirect.discard = 1;
++
++    drmCommandWriteRead(drmFD, DRM_RADEON_INDIRECT,
++                        &indirect, sizeof(drm_radeon_indirect_t));
+ 
+-    R600CPFlushIndirect(pScrn, accel_state->ib);
+ }
+ 
+ void
+@@ -123,8 +226,10 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     cb_config_t     cb_conf;
+     tex_resource_t  tex_res;
+     tex_sampler_t   tex_samp;
+-    shader_config_t vs_conf, ps_conf;
++/*    shader_config_t vs_conf, ps_conf; */
+     int uv_offset;
++int x;
++uint32_t *ib_head;
+ 
+     static float ps_alu_consts[] = {
+         1.0,  0.0,      1.4020,    0,  // r - c[0]
+@@ -142,8 +247,8 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     CLEAR (cb_conf);
+     CLEAR (tex_res);
+     CLEAR (tex_samp);
+-    CLEAR (vs_conf);
+-    CLEAR (ps_conf);
++/*    CLEAR (vs_conf); */
++/*    CLEAR (ps_conf); */
+ 
+     accel_state->dst_pitch = exaGetPixmapPitch(pPixmap) / (pPixmap->drawable.bitsPerPixel / 8);
+     accel_state->src_pitch[0] = pPriv->BufferPitch;
+@@ -172,8 +277,19 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     set_default_state(pScrn, accel_state->ib);
+ 
+     /* Scissor / viewport */
+-    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
++/*    EREG(accel_state->ib, PA_CL_VTE_CNTL,                      VTX_XY_FMT_bit);
+     EREG(accel_state->ib, PA_CL_CLIP_CNTL,                     CLIP_DISABLE_bit);
++*/
++
++    ib_head = (pointer)(char*)(accel_state->ib)->address;
++x = (accel_state->ib)->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= ( PA_CL_VTE_CNTL - 0x28000) >> 2;
++    ib_head[x+2]=  VTX_XY_FMT_bit;
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= ( PA_CL_CLIP_CNTL - 0x28000) >> 2;
++    ib_head[x+5]= CLIP_DISABLE_bit;
+ 
+     accel_state->vs_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+ 	accel_state->xv_vs_offset;
+@@ -181,15 +297,23 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     accel_state->ps_mc_addr = rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart + accel_state->shaders->offset +
+ 	accel_state->xv_ps_offset;
+ 
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_BOOL_CONST << 8) | 0x10000;
++    ib_head[x+7]= (((SQ_BOOL_CONST + SQ_BOOL_CONST_ps * SQ_BOOL_CONST_offset) - SET_BOOL_CONST_offset) >> 2);
++
+     switch(pPriv->id) {
+     case FOURCC_YV12:
+     case FOURCC_I420:
+-	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_ps, (1 << 0));
++/*	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_ps, (1 << 0));
++*/
++    ib_head[x+8]= 1;
++
+ 	break;
+     case FOURCC_UYVY:
+     case FOURCC_YUY2:
+     default:
+-	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_ps, (0 << 0));
++/*	set_bool_consts(pScrn, accel_state->ib, SQ_BOOL_CONST_ps, (0 << 0));
++*/
++    ib_head[x+8]= 0;
+ 	break;
+     }
+ 
+@@ -199,25 +323,71 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     /* Shader */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->vs_size, accel_state->vs_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++			accel_state->vs_size, accel_state->vs_mc_addr); */
++
++/* x = (accel_state->ib)->used>>2; */
+ 
+-    vs_conf.shader_addr         = accel_state->vs_mc_addr;
++    ib_head[x+9] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+10] = SH_ACTION_ENA_bit;
++    ib_head[x+11] = (512 + 255)>> 8;
++    ib_head[x+12] = accel_state->vs_mc_addr >> 8;
++    ib_head[x+13] = 10;
++/*    (accel_state->ib)->used += 20; */
++
++/*    vs_conf.shader_addr         = accel_state->vs_mc_addr;
+     vs_conf.num_gprs            = 2;
+-    vs_conf.stack_size          = 0;
++    vs_conf.stack_size          = 0; 
+     vs_setup                    (pScrn, accel_state->ib, &vs_conf);
++*/
++/*    ib_head = (pointer)(char*)(accel_state->ib)->address; */
++/*x = (accel_state->ib)->used>>2; */
++    ib_head[x+14]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+15]= (SQ_PGM_START_VS - 0x28000) >> 2;
++    ib_head[x+16]= accel_state->vs_mc_addr >> 8;
++    ib_head[x+17]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+18]= (SQ_PGM_RESOURCES_VS - 0x28000) >> 2;
++    ib_head[x+19]= (2 << NUM_GPRS_shift);
++    ib_head[x+20]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+21]= (SQ_PGM_CF_OFFSET_VS - 0x28000) >> 2;
++    ib_head[x+22]= 0;
++/*    (accel_state->ib)->used += 56; */
+ 
+     /* flush SQ cache */
+-    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
+-			accel_state->ps_size, accel_state->ps_mc_addr);
++/*    cp_set_surface_sync(pScrn, accel_state->ib, SH_ACTION_ENA_bit,
++			accel_state->ps_size, accel_state->ps_mc_addr); */
++
++    ib_head[x+23] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+24] = SH_ACTION_ENA_bit;
++    ib_head[x+25] = (512 + 255)>> 8;
++    ib_head[x+26] = accel_state->ps_mc_addr >> 8;
++    ib_head[x+27] = 10;
++/*    (accel_state->ib)->used += 100; */
+ 
+-    ps_conf.shader_addr         = accel_state->ps_mc_addr;
++/*    ps_conf.shader_addr         = accel_state->ps_mc_addr;
+     ps_conf.num_gprs            = 3;
+     ps_conf.stack_size          = 1;
+     ps_conf.uncached_first_inst = 1;
+-    ps_conf.clamp_consts        = 0;
++    ps_conf.clamp_consts        = 0; 
+     ps_conf.export_mode         = 2;
+-    ps_setup                    (pScrn, accel_state->ib, &ps_conf);
++    ps_setup                    (pScrn, accel_state->ib, &ps_conf); */
++
++/*x = (accel_state->ib)->used>>2; */
++
++    ib_head[x+28]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+29]= (SQ_PGM_START_PS - 0x28000) >> 2;
++    ib_head[x+30]= accel_state->ps_mc_addr >> 8;
++    ib_head[x+31]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+32]= (SQ_PGM_RESOURCES_PS - 0x28000) >> 2;
++    ib_head[x+33]= (3 << NUM_GPRS_shift) |(1 << STACK_SIZE_shift) | UNCACHED_FIRST_INST_bit;
++    ib_head[x+34]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+35]= (SQ_PGM_EXPORTS_PS - 0x28000) >> 2;
++    ib_head[x+36]= 2;
++    ib_head[x+37]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+38]= (SQ_PGM_CF_OFFSET_PS - 0x28000) >> 2;
++    ib_head[x+39]= 0;
++
++    (accel_state->ib)->used += 160; 
+ 
+     // PS alu constants
+     set_alu_consts(pScrn, accel_state->ib, 0, sizeof(ps_alu_consts) / SQ_ALU_CONSTANT_offset, ps_alu_consts);
+@@ -230,15 +400,25 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	accel_state->src_size[0] = accel_state->src_pitch[0] * pPriv->h;
+ 
+ 	/* flush texture cache */
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit, accel_state->src_size[0],
++/*	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit, accel_state->src_size[0],
+ 			    accel_state->src_mc_addr[0]);
++*/
++        x = (accel_state->ib)->used>>2; 
++
++        ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++        ib_head[x+2] = (accel_state->src_size[0] == 0xffffffff ? 0xffffffff :((accel_state->src_size[0] + 255)>> 8));
++        ib_head[x+3] = accel_state->src_mc_addr[0] >> 8;
++        ib_head[x+4] = 10;
++
++        (accel_state->ib)->used += 20;
+ 
+ 	// Y texture
+-	tex_res.id                  = 0;
++/*	tex_res.id                  = 0; */
+ 	tex_res.w                   = pPriv->w;
+ 	tex_res.h                   = pPriv->h;
+ 	tex_res.pitch               = accel_state->src_pitch[0];
+-	tex_res.depth               = 0;
++/*	tex_res.depth               = 0; */
+ 	tex_res.dim                 = SQ_TEX_DIM_2D;
+ 	tex_res.base                = accel_state->src_mc_addr[0];
+ 	tex_res.mip_base            = accel_state->src_mc_addr[0];
+@@ -250,14 +430,14 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	tex_res.dst_sel_w           = SQ_SEL_1;
+ 
+ 	tex_res.request_size        = 1;
+-	tex_res.base_level          = 0;
++/*	tex_res.base_level          = 0;
+ 	tex_res.last_level          = 0;
+ 	tex_res.perf_modulation     = 0;
+-	tex_res.interlaced          = 0;
++	tex_res.interlaced          = 0; */
+ 	set_tex_resource            (pScrn, accel_state->ib, &tex_res);
+ 
+ 	// Y sampler
+-	tex_samp.id                 = 0;
++/*	tex_samp.id                 = 0; */
+ 	tex_samp.clamp_x            = SQ_TEX_CLAMP_LAST_TEXEL;
+ 	tex_samp.clamp_y            = SQ_TEX_CLAMP_LAST_TEXEL;
+ 	tex_samp.clamp_z            = SQ_TEX_WRAP;
+@@ -267,9 +447,20 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	uv_offset = accel_state->src_pitch[0] * pPriv->h;
+ 	uv_offset = (uv_offset + 255) & ~255;
+ 
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++/*	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+ 			    accel_state->src_size[0] / 4,
+ 			    accel_state->src_mc_addr[0] + uv_offset);
++*/
++
++        x = (accel_state->ib)->used>>2;
++
++        ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++        ib_head[x+2] = ((accel_state->src_size[0]/4 ) == 0xffffffff ? 0xffffffff :(((accel_state->src_size[0]/4) + 255)>> 8));
++        ib_head[x+3] = (accel_state->src_mc_addr[0] + uv_offset) >> 8;
++        ib_head[x+4] = 10;
++
++        (accel_state->ib)->used += 20;
+ 
+ 	tex_res.id                  = 1;
+ 	tex_res.format              = FMT_8;
+@@ -280,7 +471,7 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	tex_res.dst_sel_y           = SQ_SEL_1;
+ 	tex_res.dst_sel_z           = SQ_SEL_1;
+ 	tex_res.dst_sel_w           = SQ_SEL_1;
+-	tex_res.interlaced          = 0;
++/*	tex_res.interlaced          = 0; */
+ 	// XXX tex bases need to be 256B aligned
+ 	tex_res.base                = accel_state->src_mc_addr[0] + uv_offset;
+ 	tex_res.mip_base            = accel_state->src_mc_addr[0] + uv_offset;
+@@ -291,7 +482,7 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	tex_samp.xy_min_filter      = SQ_TEX_XY_FILTER_BILINEAR;
+ 
+ 	tex_samp.z_filter           = SQ_TEX_Z_FILTER_NONE;
+-	tex_samp.mip_filter         = 0;			/* no mipmap */
++/*	tex_samp.mip_filter         = 0; */ 			/* no mipmap */
+ 	set_tex_sampler             (pScrn, accel_state->ib, &tex_samp);
+ 
+ 	// UV sampler
+@@ -302,9 +493,20 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	uv_offset += ((accel_state->src_pitch[0] >> 1) * (pPriv->h >> 1));
+ 	uv_offset = (uv_offset + 255) & ~255;
+ 
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
++/*	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit,
+ 			    accel_state->src_size[0] / 4,
+ 			    accel_state->src_mc_addr[0] + uv_offset);
++*/
++
++        x = (accel_state->ib)->used>>2;
++
++        ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++        ib_head[x+2] = ((accel_state->src_size[0]/4 ) == 0xffffffff ? 0xffffffff :(((accel_state->src_size[0]/4) + 255)>> 8));
++        ib_head[x+3] = (accel_state->src_mc_addr[0] + uv_offset) >> 8;
++        ib_head[x+4] = 10;
++
++        (accel_state->ib)->used += 20;
+ 
+ 	tex_res.id                  = 2;
+ 	tex_res.format              = FMT_8;
+@@ -340,15 +542,26 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	accel_state->src_size[0] = accel_state->src_pitch[0] * pPriv->h;
+ 
+ 	/* flush texture cache */
+-	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit, accel_state->src_size[0],
++/*	cp_set_surface_sync(pScrn, accel_state->ib, TC_ACTION_ENA_bit, accel_state->src_size[0],
+ 			    accel_state->src_mc_addr[0]);
+ 
++*/
++        x = (accel_state->ib)->used>>2;
++
++        ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++        ib_head[x+1] = TC_ACTION_ENA_bit;
++        ib_head[x+2] = (accel_state->src_size[0] == 0xffffffff ? 0xffffffff :((accel_state->src_size[0] + 255)>> 8));
++        ib_head[x+3] = accel_state->src_mc_addr[0] >> 8;
++        ib_head[x+4] = 10;
++
++        (accel_state->ib)->used += 20;
++
+ 	// Y texture
+-	tex_res.id                  = 0;
++/*	tex_res.id                  = 0; */
+ 	tex_res.w                   = pPriv->w;
+ 	tex_res.h                   = pPriv->h;
+ 	tex_res.pitch               = accel_state->src_pitch[0] >> 1;
+-	tex_res.depth               = 0;
++/*	tex_res.depth               = 0; */
+ 	tex_res.dim                 = SQ_TEX_DIM_2D;
+ 	tex_res.base                = accel_state->src_mc_addr[0];
+ 	tex_res.mip_base            = accel_state->src_mc_addr[0];
+@@ -363,14 +576,13 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	tex_res.dst_sel_w           = SQ_SEL_1;
+ 
+ 	tex_res.request_size        = 1;
+-	tex_res.base_level          = 0;
++/*	tex_res.base_level          = 0;
+ 	tex_res.last_level          = 0;
+ 	tex_res.perf_modulation     = 0;
+-	tex_res.interlaced          = 0;
++	tex_res.interlaced          = 0; */
+ 	set_tex_resource            (pScrn, accel_state->ib, &tex_res);
+ 
+-	// Y sampler
+-	tex_samp.id                 = 0;
++/*	tex_samp.id                 = 0; */
+ 	tex_samp.clamp_x            = SQ_TEX_CLAMP_LAST_TEXEL;
+ 	tex_samp.clamp_y            = SQ_TEX_CLAMP_LAST_TEXEL;
+ 	tex_samp.clamp_z            = SQ_TEX_WRAP;
+@@ -391,7 +603,7 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	}
+ 	tex_res.dst_sel_z           = SQ_SEL_1;
+ 	tex_res.dst_sel_w           = SQ_SEL_1;
+-	tex_res.interlaced          = 0;
++/*	tex_res.interlaced          = 0; */
+ 	// XXX tex bases need to be 256B aligned
+ 	tex_res.base                = accel_state->src_mc_addr[0];
+ 	tex_res.mip_base            = accel_state->src_mc_addr[0];
+@@ -402,7 +614,7 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	tex_samp.xy_min_filter      = SQ_TEX_XY_FILTER_BILINEAR;
+ 
+ 	tex_samp.z_filter           = SQ_TEX_Z_FILTER_NONE;
+-	tex_samp.mip_filter         = 0;			/* no mipmap */
++/*	tex_samp.mip_filter         = 0;*/			/* no mipmap */
+ 	set_tex_sampler             (pScrn, accel_state->ib, &tex_samp);
+ 
+ 	// UV sampler
+@@ -412,11 +624,26 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     }
+ 
+     /* Render setup */
+-    EREG(accel_state->ib, CB_SHADER_MASK,                      (0x0f << OUTPUT0_ENABLE_shift));
++/*    EREG(accel_state->ib, CB_SHADER_MASK,                      (0x0f << OUTPUT0_ENABLE_shift));
+     EREG(accel_state->ib, R7xx_CB_SHADER_CONTROL,              (RT0_ENABLE_bit));
+-    EREG(accel_state->ib, CB_COLOR_CONTROL,                    (0xcc << ROP3_shift)); /* copy */
++    EREG(accel_state->ib, CB_COLOR_CONTROL,                    (0xcc << ROP3_shift)); */ /* copy */
+ 
+-    cb_conf.id = 0;
++ x = (accel_state->ib)->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= ( CB_SHADER_MASK - 0x28000) >> 2;
++    ib_head[x+2]=  (0x0f << OUTPUT0_ENABLE_shift);
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= ( R7xx_CB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+5]= RT0_ENABLE_bit;
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+7]= ( CB_COLOR_CONTROL - 0x28000) >> 2;
++    ib_head[x+8]= (0xcc << ROP3_shift);
++    (accel_state->ib)->used += 36;
++
++
++
++ /*   cb_conf.id = 0; */
+ 
+     accel_state->dst_mc_addr = exaGetPixmapOffset(pPixmap) + rhdPtr->FbIntAddress + rhdPtr->FbScanoutStart;
+ 
+@@ -446,25 +673,72 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+     cb_conf.blend_clamp = 1;
+     set_render_target(pScrn, accel_state->ib, &cb_conf);
+ 
+-    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit			|
++/*    EREG(accel_state->ib, PA_SU_SC_MODE_CNTL,                  (FACE_bit			|
+ 								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)	|
+ 								(POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift)));
+-    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)		| /* EARLY_Z_THEN_LATE_Z */
+-								DUAL_EXPORT_ENABLE_bit)); /* Only useful if no depth export */
++    EREG(accel_state->ib, DB_SHADER_CONTROL,                   ((1 << Z_ORDER_shift)		| *//* EARLY_Z_THEN_LATE_Z */
++/*								DUAL_EXPORT_ENABLE_bit)); */ /* Only useful if no depth export */
++
++
++x = (accel_state->ib)->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= ( PA_SU_SC_MODE_CNTL - 0x28000) >> 2;
++    ib_head[x+2]=  (FACE_bit                        |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_FRONT_PTYPE_shift)       |
++                   (POLYMODE_PTYPE__TRIANGLES << POLYMODE_BACK_PTYPE_shift));
++
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= (DB_SHADER_CONTROL - 0x28000) >> 2;
++    ib_head[x+5]= ((1 << Z_ORDER_shift)            | /* EARLY_Z_THEN_LATE_Z */
++                  DUAL_EXPORT_ENABLE_bit);
++
+ 
+     /* Interpolator setup */
+     // export tex coords from VS
+-    EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((1 - 1) << VS_EXPORT_COUNT_shift));
++/*    EREG(accel_state->ib, SPI_VS_OUT_CONFIG, ((1 - 1) << VS_EXPORT_COUNT_shift));
+     EREG(accel_state->ib, SPI_VS_OUT_ID_0, (0 << SEMANTIC_0_shift));
++*/
++
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+7]= ( SPI_VS_OUT_CONFIG - 0x28000) >> 2;
++    ib_head[x+8]= (0 << VS_EXPORT_COUNT_shift);
++
++    ib_head[x+9]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+10]= ( SPI_VS_OUT_ID_0 - 0x28000) >> 2;
++    ib_head[x+11]= (0 << SEMANTIC_0_shift);
++
+ 
+     /* Enabling flat shading needs both FLAT_SHADE_bit in SPI_PS_INPUT_CNTL_x
+      * *and* FLAT_SHADE_ENA_bit in SPI_INTERP_CONTROL_0 */
+-    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 ((1 << NUM_INTERP_shift)));
++/*    EREG(accel_state->ib, SPI_PS_IN_CONTROL_0,                 ((1 << NUM_INTERP_shift)));
+     EREG(accel_state->ib, SPI_PS_IN_CONTROL_1,                 0);
+     EREG(accel_state->ib, SPI_PS_INPUT_CNTL_0 + (0 <<2),       ((0    << SEMANTIC_shift)	|
+ 								(0x03 << DEFAULT_VAL_shift)	|
+ 								SEL_CENTROID_bit));
+     EREG(accel_state->ib, SPI_INTERP_CONTROL_0,                0);
++*/
++
++    ib_head[x+12]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+13]= ( SPI_PS_IN_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+14]= (1 << NUM_INTERP_shift);
++
++    ib_head[x+15]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+16]= (SPI_PS_IN_CONTROL_1 - 0x28000) >> 2;
++    ib_head[x+17]= 0;
++
++    ib_head[x+18]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+19]= ( SPI_PS_INPUT_CNTL_0  - 0x28000) >> 2;
++    ib_head[x+20]= ((0    << SEMANTIC_shift)      |
++                   (0x03 << DEFAULT_VAL_shift)    |
++                    SEL_CENTROID_bit);
++
++    ib_head[x+21]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+22]= (SPI_INTERP_CONTROL_0 - 0x28000) >> 2;
++    ib_head[x+23]= FLAT_SHADE_ENA_bit;
++
++   (accel_state->ib)->used += 96;
++
+ 
+     if (exaGetPixmapOffset(pPixmap) == 0)
+ 	wait_vline_range(
+@@ -505,20 +779,20 @@ R600DisplayTexturedVideo(ScrnInfoPtr pScrn, struct RHDPortPriv *pPriv)
+ 	srcw = (pPriv->src_w * dstw) / pPriv->dst_w;
+ 	srch = (pPriv->src_h * dsth) / pPriv->dst_h;
+ 
+-	vb[0] = (float)dstX;
++/*	vb[0] = (float)dstX; */
+ 	vb[1] = (float)dstY;
+-	vb[2] = (float)srcX / pPriv->w;
++/*	vb[2] = (float)srcX / pPriv->w; */
+ 	vb[3] = (float)srcY / pPriv->h;
+ 
+-	vb[4] = (float)dstX;
+-	vb[5] = (float)(dstY + dsth);
+-	vb[6] = (float)srcX / pPriv->w;
+-	vb[7] = (float)(srcY + srch) / pPriv->h;
++	vb[0] = vb[4] = (float)dstX;
++/*	vb[5] = (float)(dstY + dsth); */
++	vb[2] = vb[6] = (float)srcX / pPriv->w;
++/*	vb[7] = (float)(srcY + srch) / pPriv->h; */
+ 
+ 	vb[8] = (float)(dstX + dstw);
+-	vb[9] = (float)(dstY + dsth);
++	vb[5] = vb[9] = (float)(dstY + dsth);
+ 	vb[10] = (float)(srcX + srcw) / pPriv->w;
+-	vb[11] = (float)(srcY + srch) / pPriv->h;
++	vb[7] = vb[11] = (float)(srcY + srch) / pPriv->h;
+ 
+ 	accel_state->vb_index += 3;
+ 
+diff --git a/src/r6xx_accel.c b/src/r6xx_accel.c
+index 0fac859..550863b 100644
+--- a/src/r6xx_accel.c
++++ b/src/r6xx_accel.c
+@@ -64,6 +64,8 @@
+ /* Flush the indirect buffer to the kernel for submission to the card */
+ void R600CPFlushIndirect(ScrnInfoPtr pScrn, drmBufPtr ib)
+ {
++int x;
++uint32_t *ib_head;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+     drmBufPtr          buffer = ib;
+     int                start  = 0;
+@@ -74,9 +76,12 @@ void R600CPFlushIndirect(ScrnInfoPtr pScrn, drmBufPtr ib)
+ 
+     //xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Flushing buffer %d\n",
+     //       buffer->idx);
+-
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
+     while (buffer->used & 0x3c){
+-        E32(buffer, CP_PACKET2()); /* fill up to multiple of 16 dwords */
++    /*    E32(buffer, CP_PACKET2()); */ /* fill up to multiple of 16 dwords */
++    ib_head[x++] =  CP_PACKET2();
++    ib->used += 4;
+     }
+ 
+     //ErrorF("buffer bytes: %d\n", buffer->used);
+@@ -102,22 +107,44 @@ void R600IBDiscard(ScrnInfoPtr pScrn, drmBufPtr ib)
+ void
+ wait_3d_idle_clean(ScrnInfoPtr pScrn, drmBufPtr ib)
+ {
++int x;
++uint32_t *ib_head;
++
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+     //flush caches, don't generate timestamp
+-    PACK3(ib, IT_EVENT_WRITE, 1);
+-    E32(ib, CACHE_FLUSH_AND_INV_EVENT);
++/*    PACK3(ib, IT_EVENT_WRITE, 1);
++    E32(ib, CACHE_FLUSH_AND_INV_EVENT); */
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++    ib_head[x] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+1] =  CACHE_FLUSH_AND_INV_EVENT;
++
+     // wait for 3D idle clean
+-    EREG(ib, WAIT_UNTIL,                          (WAIT_3D_IDLE_bit |
++/*    EREG(ib, WAIT_UNTIL,                          (WAIT_3D_IDLE_bit |
+ 						     WAIT_3D_IDLECLEAN_bit));
++*/
++    ib_head[x+2] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+3] =  0x10;
++    ib_head[x+4] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++    ib->used += 20;
++    
+ }
+ 
+ void
+ wait_3d_idle(ScrnInfoPtr pScrn, drmBufPtr ib)
+ {
++int x;
++uint32_t *ib_head;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+-    EREG(ib, WAIT_UNTIL,                          WAIT_3D_IDLE_bit);
++/*    EREG(ib, WAIT_UNTIL,                          WAIT_3D_IDLE_bit); */
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++    ib_head[x] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+1] =  0x10;
++    ib_head[x+2] =  WAIT_3D_IDLE_bit ;
++    ib->used += 12;
+ 
+ }
+ 
+@@ -127,6 +154,8 @@ wait_3d_idle(ScrnInfoPtr pScrn, drmBufPtr ib)
+ void
+ wait_vline_range(ScrnInfoPtr pScrn, drmBufPtr ib, int crtc, int start, int stop)
+ {
++int x;
++uint32_t *ib_head;
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+     struct rhdCrtc *rhdCrtc;
+ 
+@@ -146,24 +175,46 @@ wait_vline_range(ScrnInfoPtr pScrn, drmBufPtr ib, int crtc, int start, int stop)
+ 
+     if (stop <= start)
+ 	return;
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
+ 
+     /* set the VLINE range */
+-    if(crtc == 0)
+-	EREG(ib, D1MODE_VLINE_START_END, start | (stop << 16));
+-    else
+-	EREG(ib, D2MODE_VLINE_START_END, start | (stop << 16));
++    if(crtc == 0) {
++	/* EREG(ib, D1MODE_VLINE_START_END, start | (stop << 16)); */
++      ib_head[x] = D1MODE_VLINE_START_END>>2 ;
++      ib_head[x+1] =  start | (stop << 16) ;
++
++    }
++    else {
++	/* EREG(ib, D2MODE_VLINE_START_END, start | (stop << 16)); */
++      ib_head[x] = D2MODE_VLINE_START_END>>2 ;
++      ib_head[x+1] =  start | (stop << 16) ;
++    }
+ 
+     /* tell the CP to poll the VLINE state register */
+-    PACK3(ib, IT_WAIT_REG_MEM, 6);
+-    E32(ib, WAIT_REG | WAIT_EQ);
++/*    PACK3(ib, IT_WAIT_REG_MEM, 6); */
++    ib_head[x+2] = RADEON_CP_PACKET3 | (IT_WAIT_REG_MEM << 8) |0x50000 ;
++
++/*    E32(ib, WAIT_REG | WAIT_EQ); */
++    ib_head[x+3] = WAIT_REG | WAIT_EQ;
++
+     if(crtc == 0)
+-	E32(ib, D1MODE_VLINE_STATUS >> 2);
++/*	E32(ib, D1MODE_VLINE_STATUS >> 2); */
++       ib_head[x+4] = D1MODE_VLINE_STATUS >> 2;
+     else
+-	E32(ib, D2MODE_VLINE_STATUS >> 2);
+-    E32(ib, 0);
+-    E32(ib, 0); // Ref value
+-    E32(ib, 0x1000); // Mask
+-    E32(ib, 10); // Wait interval 
++/*	E32(ib, D2MODE_VLINE_STATUS >> 2); */
++       ib_head[x+4] = D2MODE_VLINE_STATUS >> 2;
++/*    E32(ib, 0);
++    E32(ib, 0); */ // Ref value
++/*    E32(ib, 0x1000); */ // Mask
++/*    E32(ib, 10);*/ // Wait interval 
++    ib_head[x+5] = 0;
++    ib_head[x+6] = 0;
++    ib_head[x+7] = 0x1000;
++    ib_head[x+8] = 0;
++    ib->used += 36;
++
++
+ }
+ 
+ static void
+@@ -174,7 +225,7 @@ reset_cb(ScrnInfoPtr pScrn, drmBufPtr ib)
+ 
+     PACK0(ib, CB_COLOR0_INFO, 8);
+     for (i = 0; i < 8; i++)
+-	E32(ib, 0);
++	E32(ib, 0); 
+ }
+ 
+ static void
+@@ -242,18 +293,42 @@ reset_bool_loop_const(ScrnInfoPtr pScrn, drmBufPtr ib)
+ void
+ start_3d(ScrnInfoPtr pScrn, drmBufPtr ib)
+ {
++int x;
++uint32_t *ib_head;
++
+     RHDPtr rhdPtr = RHDPTR(pScrn);
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
+ 
+     if (rhdPtr->ChipSet < RHD_RV770) {
+-	PACK3(ib, IT_START_3D_CMDBUF, 1);
+-	E32(ib, 0);
++/*	PACK3(ib, IT_START_3D_CMDBUF, 1);
++	E32(ib, 0); */
++    ib_head[x] = RADEON_CP_PACKET3 | (IT_START_3D_CMDBUF << 8);
++    ib_head[x+1] = 0x00000000;
++    x+=2;
++    ib->used += 8;
+     }
+ 
+-    PACK3(ib, IT_CONTEXT_CONTROL, 2);
+-    E32(ib, 0x80000000);
++/*    PACK3(ib, IT_CONTEXT_CONTROL, 2);
+     E32(ib, 0x80000000);
++    E32(ib, 0x80000000); */
++
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0001 << 16) | (IT_CONTEXT_CONTROL << 8);
++    ib_head[x+1] = 0x80000000;
++    ib_head[x+2] = 0x80000000;
++/*    ib->used += 12; */
++
++
++
++/*    wait_3d_idle_clean (pScrn, ib); */
++
++    ib_head[x+3] = RADEON_CP_PACKET3 | (IT_EVENT_WRITE << 8) ;
++    ib_head[x+4] =  CACHE_FLUSH_AND_INV_EVENT;
++    ib_head[x+5] = RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000 ;
++    ib_head[x+6] =  0x10;
++    ib_head[x+7] =  ( WAIT_3D_IDLE_bit | WAIT_3D_IDLECLEAN_bit );
++    ib->used += 32;
+ 
+-    wait_3d_idle_clean (pScrn, ib);
+ }
+ 
+ /*
+@@ -264,6 +339,9 @@ start_3d(ScrnInfoPtr pScrn, drmBufPtr ib)
+ static void
+ sq_setup(ScrnInfoPtr pScrn, drmBufPtr ib, sq_config_t *sq_conf)
+ {
++int x;
++uint32_t *ib_head;
++
+     uint32_t sq_config, sq_gpr_resource_mgmt_1, sq_gpr_resource_mgmt_2;
+     uint32_t sq_thread_resource_mgmt, sq_stack_resource_mgmt_1, sq_stack_resource_mgmt_2;
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+@@ -304,19 +382,33 @@ sq_setup(ScrnInfoPtr pScrn, drmBufPtr ib, sq_config_t *sq_conf)
+ 				(sq_conf->num_es_stack_entries << NUM_ES_STACK_ENTRIES_shift));
+ 
+     PACK0(ib, SQ_CONFIG, 6);
+-    E32(ib, sq_config);
++/*    E32(ib, sq_config);
+     E32(ib, sq_gpr_resource_mgmt_1);
+     E32(ib, sq_gpr_resource_mgmt_2);
+     E32(ib, sq_thread_resource_mgmt);
+     E32(ib, sq_stack_resource_mgmt_1);
+-    E32(ib, sq_stack_resource_mgmt_2);
++    E32(ib, sq_stack_resource_mgmt_2); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++
++    ib_head[x] = sq_config;
++    ib_head[x+1] = sq_gpr_resource_mgmt_1;
++    ib_head[x+2] = sq_gpr_resource_mgmt_2;
++    ib_head[x+3] = sq_thread_resource_mgmt;
++    ib_head[x+4] = sq_stack_resource_mgmt_1;
++    ib_head[x+5] = sq_stack_resource_mgmt_2;
++    ib->used += 24;
+ 
+ }
+ 
+ void
+ set_render_target(ScrnInfoPtr pScrn, drmBufPtr ib, cb_config_t *cb_conf)
+ {
+-    uint32_t cb_color_info;
++int x;
++uint32_t *ib_head;
++    uint32_t cb_color_info,cb_conf_id;
+     int pitch, slice, h;
+     RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+@@ -349,43 +441,101 @@ set_render_target(ScrnInfoPtr pScrn, drmBufPtr ib, cb_config_t *cb_conf)
+     h = (cb_conf->h + 7) & ~7;
+     slice = ((cb_conf->w * h) / 64) - 1;
+ 
+-    EREG(ib, (CB_COLOR0_BASE + (4 * cb_conf->id)), (cb_conf->base >> 8));
++/*    EREG(ib, (CB_COLOR0_BASE + (4 * cb_conf->id)), (cb_conf->base >> 8)); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++cb_conf_id = cb_conf->id;
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= ((CB_COLOR0_BASE  - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+2]= (cb_conf->base >> 8);
++
++
+ 
+     // rv6xx workaround
+     if ((rhdPtr->ChipSet > RHD_R600) &&
+ 	(rhdPtr->ChipSet < RHD_RV770)) {
+-	PACK3(ib, IT_SURFACE_BASE_UPDATE, 1);
+-	E32(ib, (2 << cb_conf->id));
++/*	PACK3(ib, IT_SURFACE_BASE_UPDATE, 1);
++	E32(ib, (2 << cb_conf->id)); */
++        ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SURFACE_BASE_UPDATE << 8);
++        ib_head[x+4]= 2 << cb_conf_id;
++
++        x+=2;
++        ib->used += 8;
++
+     }
+ 
+     // pitch only for ARRAY_LINEAR_GENERAL, other tiling modes require addrlib
+-    EREG(ib, (CB_COLOR0_SIZE + (4 * cb_conf->id)), ((pitch << PITCH_TILE_MAX_shift)	|
++/*    EREG(ib, (CB_COLOR0_SIZE + (4 * cb_conf->id)), ((pitch << PITCH_TILE_MAX_shift)	|
+ 						    (slice << SLICE_TILE_MAX_shift)));
+     EREG(ib, (CB_COLOR0_VIEW + (4 * cb_conf->id)), ((0    << SLICE_START_shift)		|
+ 						    (0    << SLICE_MAX_shift)));
+     EREG(ib, (CB_COLOR0_INFO + (4 * cb_conf->id)), cb_color_info);
+-    EREG(ib, (CB_COLOR0_TILE + (4 * cb_conf->id)), (0     >> 8));	// CMASK per-tile data base/256
+-    EREG(ib, (CB_COLOR0_FRAG + (4 * cb_conf->id)), (0     >> 8));	// FMASK per-tile data base/256
+-    EREG(ib, (CB_COLOR0_MASK + (4 * cb_conf->id)), ((0    << CMASK_BLOCK_MAX_shift)	|
+-						    (0    << FMASK_TILE_MAX_shift)));
++    EREG(ib, (CB_COLOR0_TILE + (4 * cb_conf->id)), (0     >> 8)); */	// CMASK per-tile data base/256
++/*    EREG(ib, (CB_COLOR0_FRAG + (4 * cb_conf->id)), (0     >> 8)); */	// FMASK per-tile data base/256
++/*    EREG(ib, (CB_COLOR0_MASK + (4 * cb_conf->id)), ((0    << CMASK_BLOCK_MAX_shift)	|
++						    (0    << FMASK_TILE_MAX_shift))); */
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= ((CB_COLOR0_SIZE - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+5]= ((pitch << PITCH_TILE_MAX_shift)     |
++                   (slice << SLICE_TILE_MAX_shift));
++
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+7]= ((CB_COLOR0_VIEW - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+8]= 0;
++
++    ib_head[x+9]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+10]= ((CB_COLOR0_INFO - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+11]= cb_color_info;
++
++    ib_head[x+12]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+13]= ((CB_COLOR0_TILE - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+14]= 0;
++
++    ib_head[x+15]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+16]= ((CB_COLOR0_FRAG - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+17]= 0;
++
++    ib_head[x+18]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+19]= ((CB_COLOR0_MASK - 0x28000) >> 2) + cb_conf_id;
++    ib_head[x+20]= 0;
++
++    ib->used += 84;
++
++
+ }
+ 
+ void
+ cp_set_surface_sync(ScrnInfoPtr pScrn, drmBufPtr ib, uint32_t sync_type, uint32_t size, uint64_t mc_addr)
+ {
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
++int x;
++uint32_t *ib_head;
+ 
+     uint32_t cp_coher_size;
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
+     if (size == 0xffffffff)
+ 	cp_coher_size = 0xffffffff;
+     else
+ 	cp_coher_size = ((size + 255) >> 8);
+-
++/*
+     PACK3(ib, IT_SURFACE_SYNC, 4);
+     E32(ib, sync_type);
+     E32(ib, cp_coher_size);
+     E32(ib, (mc_addr >> 8));
+-    E32(ib, 10); /* poll interval */
++    E32(ib, 10);*/ /* poll interval */
++
++    ib_head[x] = RADEON_CP_PACKET3 | (0x0003 << 16) | (IT_SURFACE_SYNC << 8);
++    ib_head[x+1] = sync_type;
++    ib_head[x+2] = cp_coher_size;
++    ib_head[x+3] = mc_addr >> 8;
++    ib_head[x+4] = 10;
++    ib->used += 20;
++
++
+ }
+ 
+ void
+@@ -400,6 +550,7 @@ fs_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *fs_conf)
+     if (fs_conf->dx10_clamp)
+ 	sq_pgm_resources |= SQ_PGM_RESOURCES_FS__DX10_CLAMP_bit;
+ 
++
+     EREG(ib, SQ_PGM_START_FS, fs_conf->shader_addr >> 8);
+     EREG(ib, SQ_PGM_RESOURCES_FS, sq_pgm_resources);
+     EREG(ib, SQ_PGM_CF_OFFSET_FS, 0);
+@@ -408,6 +559,8 @@ fs_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *fs_conf)
+ void
+ vs_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *vs_conf)
+ {
++int x;
++uint32_t *ib_head;
+     uint32_t sq_pgm_resources;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+@@ -421,14 +574,32 @@ vs_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *vs_conf)
+     if (vs_conf->uncached_first_inst)
+ 	sq_pgm_resources |= UNCACHED_FIRST_INST_bit;
+ 
+-    EREG(ib, SQ_PGM_START_VS, vs_conf->shader_addr >> 8);
++/*    EREG(ib, SQ_PGM_START_VS, vs_conf->shader_addr >> 8);
+     EREG(ib, SQ_PGM_RESOURCES_VS, sq_pgm_resources);
+-    EREG(ib, SQ_PGM_CF_OFFSET_VS, 0);
++    EREG(ib, SQ_PGM_CF_OFFSET_VS, 0); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= (SQ_PGM_START_VS - 0x28000) >> 2;
++    ib_head[x+2]= vs_conf->shader_addr >> 8;
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= (SQ_PGM_RESOURCES_VS - 0x28000) >> 2;
++    ib_head[x+5]= sq_pgm_resources;
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+7]= (SQ_PGM_CF_OFFSET_VS - 0x28000) >> 2;
++    ib_head[x+8]= 0;
++
++    ib->used += 36;
++
+ }
+ 
+ void
+ ps_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *ps_conf)
+ {
++int x;
++uint32_t *ib_head;
+     uint32_t sq_pgm_resources;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+@@ -443,11 +614,29 @@ ps_setup(ScrnInfoPtr pScrn, drmBufPtr ib, shader_config_t *ps_conf)
+ 	sq_pgm_resources |= UNCACHED_FIRST_INST_bit;
+     if (ps_conf->clamp_consts)
+ 	sq_pgm_resources |= CLAMP_CONSTS_bit;
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
+ 
+-    EREG(ib, SQ_PGM_START_PS, ps_conf->shader_addr >> 8);
++/*    EREG(ib, SQ_PGM_START_PS, ps_conf->shader_addr >> 8);
+     EREG(ib, SQ_PGM_RESOURCES_PS, sq_pgm_resources);
+     EREG(ib, SQ_PGM_EXPORTS_PS, ps_conf->export_mode);
+-    EREG(ib, SQ_PGM_CF_OFFSET_PS, 0);
++    EREG(ib, SQ_PGM_CF_OFFSET_PS, 0); */
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+1]= (SQ_PGM_START_PS - 0x28000) >> 2;
++    ib_head[x+2]= ps_conf->shader_addr >> 8;
++    ib_head[x+3]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+4]= (SQ_PGM_RESOURCES_PS - 0x28000) >> 2;
++    ib_head[x+5]= sq_pgm_resources;
++    ib_head[x+6]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+7]= (SQ_PGM_EXPORTS_PS - 0x28000) >> 2;
++    ib_head[x+8]= ps_conf->export_mode;
++    ib_head[x+9]= RADEON_CP_PACKET3 | (IT_SET_CONTEXT_REG << 8) | 0x10000;
++    ib_head[x+10]= (SQ_PGM_CF_OFFSET_PS - 0x28000) >> 2;
++    ib_head[x+11]= 0;
++
++    ib->used += 48;
++
+ }
+ 
+ void
+@@ -474,6 +663,9 @@ set_bool_consts(ScrnInfoPtr pScrn, drmBufPtr ib, int offset, uint32_t val)
+ void
+ set_vtx_resource(ScrnInfoPtr pScrn, drmBufPtr ib, vtx_resource_t *res)
+ {
++int x;
++uint32_t *ib_head;
++
+     uint32_t sq_vtx_constant_word2;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+@@ -491,19 +683,38 @@ set_vtx_resource(ScrnInfoPtr pScrn, drmBufPtr ib, vtx_resource_t *res)
+     if (res->srf_mode_all)
+ 	    sq_vtx_constant_word2 |= SQ_VTX_CONSTANT_WORD2_0__SRF_MODE_ALL_bit;
+ 
+-    PACK0(ib, SQ_VTX_RESOURCE + res->id * SQ_VTX_RESOURCE_offset, 7);
+-    E32(ib, res->vb_addr & 0xffffffff);				// 0: BASE_ADDRESS
+-    E32(ib, (res->vtx_num_entries << 2) - 1);			// 1: SIZE
+-    E32(ib, sq_vtx_constant_word2);	// 2: BASE_HI, STRIDE, CLAMP, FORMAT, ENDIAN
+-    E32(ib, res->mem_req_size << MEM_REQUEST_SIZE_shift);		// 3: MEM_REQUEST_SIZE ?!?
+-    E32(ib, 0);							// 4: n/a
+-    E32(ib, 0);							// 5: n/a
+-    E32(ib, SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift);	// 6: TYPE
++/*    PACK0(ib, SQ_VTX_RESOURCE + res->id * SQ_VTX_RESOURCE_offset, 7);*/
++/*    E32(ib, res->vb_addr & 0xffffffff); */				// 0: BASE_ADDRESS
++/*    E32(ib, (res->vtx_num_entries << 2) - 1); */			// 1: SIZE
++/*    E32(ib, sq_vtx_constant_word2); */	// 2: BASE_HI, STRIDE, CLAMP, FORMAT, ENDIAN
++/*    E32(ib, res->mem_req_size << MEM_REQUEST_SIZE_shift); */		// 3: MEM_REQUEST_SIZE ?!?
++/*    E32(ib, 0);					*/		// 4: n/a
++/*    E32(ib, 0);					*/		// 5: n/a
++/*    E32(ib, SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift); */	// 6: TYPE
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+1]= ((SQ_VTX_RESOURCE + res->id * SQ_VTX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+2] = res->vb_addr & 0xffffffff;
++    ib_head[x+3] = (res->vtx_num_entries << 2) - 1;
++    ib_head[x+4] = sq_vtx_constant_word2;
++    ib_head[x+5] = res->mem_req_size << MEM_REQUEST_SIZE_shift;
++    ib_head[x+6] = 0;
++    ib_head[x+7] = 0;
++    ib_head[x+8] = SQ_TEX_VTX_VALID_BUFFER << SQ_VTX_CONSTANT_WORD6_0__TYPE_shift;
++    ib->used += 36;
++
+ }
+ 
+ void
+ set_tex_resource(ScrnInfoPtr pScrn, drmBufPtr ib, tex_resource_t *tex_res)
+ {
++int x;
++uint32_t *ib_head;
++
+     uint32_t sq_tex_resource_word0, sq_tex_resource_word1, sq_tex_resource_word4;
+     uint32_t sq_tex_resource_word5, sq_tex_resource_word6;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+@@ -554,19 +765,38 @@ set_tex_resource(ScrnInfoPtr pScrn, drmBufPtr ib, tex_resource_t *tex_res)
+     if (tex_res->interlaced)
+ 	sq_tex_resource_word6 |= INTERLACED_bit;
+ 
+-    PACK0(ib, SQ_TEX_RESOURCE + tex_res->id * SQ_TEX_RESOURCE_offset, 7);
++/*    PACK0(ib, SQ_TEX_RESOURCE + tex_res->id * SQ_TEX_RESOURCE_offset, 7);
+     E32(ib, sq_tex_resource_word0);
+     E32(ib, sq_tex_resource_word1);
+     E32(ib, ((tex_res->base) >> 8));
+     E32(ib, ((tex_res->mip_base) >> 8));
+     E32(ib, sq_tex_resource_word4);
+     E32(ib, sq_tex_resource_word5);
+-    E32(ib, sq_tex_resource_word6);
++    E32(ib, sq_tex_resource_word6); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_RESOURCE << 8) | 0x70000;
++    ib_head[x+1]= ((SQ_TEX_RESOURCE + tex_res->id * SQ_TEX_RESOURCE_offset) - SET_RESOURCE_offset) >> 2;
++
++    ib_head[x+2] = sq_tex_resource_word0;
++    ib_head[x+3] = sq_tex_resource_word1;
++    ib_head[x+4] = (tex_res->base) >> 8;
++    ib_head[x+5] = (tex_res->mip_base) >> 8;
++    ib_head[x+6] = sq_tex_resource_word4;
++    ib_head[x+7] = sq_tex_resource_word5;
++    ib_head[x+8] = sq_tex_resource_word6;
++    ib->used += 36;
++
+ }
+ 
+ void
+ set_tex_sampler (ScrnInfoPtr pScrn, drmBufPtr ib, tex_sampler_t *s)
+ {
++int x;
++uint32_t *ib_head;
++
+     uint32_t sq_tex_sampler_word0, sq_tex_sampler_word1, sq_tex_sampler_word2;
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+@@ -607,10 +837,22 @@ set_tex_sampler (ScrnInfoPtr pScrn, drmBufPtr ib, tex_sampler_t *s)
+     if (s->type)
+ 	sq_tex_sampler_word2 |= SQ_TEX_SAMPLER_WORD2_0__TYPE_bit;
+ 
+-    PACK0(ib, SQ_TEX_SAMPLER_WORD + s->id * SQ_TEX_SAMPLER_WORD_offset, 3);
++/*    PACK0(ib, SQ_TEX_SAMPLER_WORD + s->id * SQ_TEX_SAMPLER_WORD_offset, 3);
+     E32(ib, sq_tex_sampler_word0);
+     E32(ib, sq_tex_sampler_word1);
+-    E32(ib, sq_tex_sampler_word2);
++    E32(ib, sq_tex_sampler_word2); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++    ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_SAMPLER  << 8) | 0x30000;
++    ib_head[x+1]= ((SQ_TEX_SAMPLER_WORD + s->id * SQ_TEX_SAMPLER_WORD_offset) - SET_SAMPLER_offset) >> 2;
++
++    ib_head[x+2] = sq_tex_sampler_word0;
++    ib_head[x+3] = sq_tex_sampler_word1;
++    ib_head[x+4] = sq_tex_sampler_word2;
++    ib->used += 20;
++
+ }
+ 
+ //XXX deal with clip offsets in clip setup
+@@ -683,6 +925,8 @@ set_clip_rect(ScrnInfoPtr pScrn, drmBufPtr ib, int id, int x1, int y1, int x2, i
+ void
+ set_default_state(ScrnInfoPtr pScrn, drmBufPtr ib)
+ {
++int x;
++uint32_t *ib_head;
+     tex_resource_t tex_res;
+     shader_config_t fs_conf;
+     sq_config_t sq_conf;
+@@ -701,6 +945,16 @@ set_default_state(ScrnInfoPtr pScrn, drmBufPtr ib)
+ 
+     accel_state->XHas3DEngineState = TRUE;
+ 
++    if ((rhdPtr->ChipSet == RHD_RV610) ||
++        (rhdPtr->ChipSet == RHD_RV620) ||
++        (rhdPtr->ChipSet == RHD_M72) ||
++        (rhdPtr->ChipSet == RHD_M74) ||
++        (rhdPtr->ChipSet == RHD_M82) ||
++        (rhdPtr->ChipSet == RHD_RS780) ||
++        (rhdPtr->ChipSet == RHD_RV710)) {
++         accel_state->Virtex_Flush_Quirk = TRUE;
++    }
++
+     wait_3d_idle(pScrn, ib);
+ 
+     // ASIC specific setup, see drm
+@@ -870,15 +1124,27 @@ set_default_state(ScrnInfoPtr pScrn, drmBufPtr ib)
+     EREG(ib, SQ_VTX_START_INST_LOC,               0);
+ 
+     PACK0(ib, SQ_ESGS_RING_ITEMSIZE, 9);
+-    E32(ib, 0);							// SQ_ESGS_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_GSVS_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_ESTMP_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_GSTMP_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_VSTMP_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_PSTMP_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_FBUF_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_REDUC_RING_ITEMSIZE
+-    E32(ib, 0);							// SQ_GS_VERT_ITEMSIZE
++/*    E32(ib, 0); */							// SQ_ESGS_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_GSVS_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_ESTMP_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_GSTMP_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_VSTMP_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_PSTMP_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_FBUF_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_REDUC_RING_ITEMSIZE
++/*    E32(ib, 0);	*/						// SQ_GS_VERT_ITEMSIZE
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++    ib_head[x] = 0;
++    ib_head[x+1] = 0;
++    ib_head[x+2] = 0;
++    ib_head[x+3] = 0;
++    ib_head[x+4] = 0;
++    ib_head[x+5] = 0;
++    ib_head[x+6] = 0;
++    ib_head[x+7] = 0;
++    ib_head[x+8] = 0;
++    ib->used += 36;
+ 
+     // DB
+     EREG(ib, DB_DEPTH_INFO,                       0);
+@@ -905,10 +1171,16 @@ set_default_state(ScrnInfoPtr pScrn, drmBufPtr ib)
+     reset_cb(pScrn, ib);
+ 
+     PACK0(ib, CB_BLEND_RED, 4);
++/*    E32(ib, 0x00000000);
+     E32(ib, 0x00000000);
+     E32(ib, 0x00000000);
+-    E32(ib, 0x00000000);
+-    E32(ib, 0x00000000);
++    E32(ib, 0x00000000); */
++x = ib->used>>2;
++    ib_head[x] = 0;
++    ib_head[x+1] = 0;
++    ib_head[x+2] = 0;
++    ib_head[x+3] = 0;
++    ib->used += 16;
+ 
+     /* CB_COLOR_CONTROL.PER_MRT_BLEND is off */
+     // RV6xx+ have per-MRT blend
+@@ -922,17 +1194,31 @@ set_default_state(ScrnInfoPtr pScrn, drmBufPtr ib)
+ 
+     if (rhdPtr->ChipSet < RHD_RV770) {
+ 	PACK0(ib, CB_FOG_RED, 3);
++/*	E32(ib, 0x00000000);
+ 	E32(ib, 0x00000000);
+-	E32(ib, 0x00000000);
+-	E32(ib, 0x00000000);
++	E32(ib, 0x00000000); */
++
++x = ib->used>>2;
++    ib_head[x] = 0;
++    ib_head[x+1] = 0;
++    ib_head[x+2] = 0;
++    ib->used += 12;
++
+     }
+ 
+     EREG(ib, CB_COLOR_CONTROL,                    0);
+     PACK0(ib, CB_CLRCMP_CONTROL, 4);
+-    E32(ib, 1 << CLRCMP_FCN_SEL_shift);				// CB_CLRCMP_CONTROL: use CLRCMP_FCN_SRC
+-    E32(ib, 0);							// CB_CLRCMP_SRC
+-    E32(ib, 0);							// CB_CLRCMP_DST
+-    E32(ib, 0);							// CB_CLRCMP_MSK
++/*    E32(ib, 1 << CLRCMP_FCN_SEL_shift);	*/			// CB_CLRCMP_CONTROL: use CLRCMP_FCN_SRC
++/*    E32(ib, 0);	*/						// CB_CLRCMP_SRC
++/*    E32(ib, 0);	*/						// CB_CLRCMP_DST
++/*    E32(ib, 0);	*/						// CB_CLRCMP_MSK
++
++x = ib->used>>2;
++    ib_head[x] = 1 << CLRCMP_FCN_SEL_shift;
++    ib_head[x+1] = 0;
++    ib_head[x+2] = 0;
++    ib_head[x+3] = 0;
++    ib->used += 16;
+ 
+ 
+     if (rhdPtr->ChipSet < RHD_RV770) {
+@@ -1141,16 +1427,38 @@ draw_immd(ScrnInfoPtr pScrn, drmBufPtr ib, draw_config_t *draw_conf, uint32_t *i
+ void
+ draw_auto(ScrnInfoPtr pScrn, drmBufPtr ib, draw_config_t *draw_conf)
+ {
++int x;
++uint32_t *ib_head;
++
+ //    RHDPtr rhdPtr = RHDPTR(pScrn);
+ 
+-    EREG(ib, VGT_PRIMITIVE_TYPE, draw_conf->prim_type);
++/*    EREG(ib, VGT_PRIMITIVE_TYPE, draw_conf->prim_type);
+     PACK3(ib, IT_INDEX_TYPE, 1);
+     E32(ib, draw_conf->index_type);
+     PACK3(ib, IT_NUM_INSTANCES, 1);
+     E32(ib, draw_conf->num_instances);
+     PACK3(ib, IT_DRAW_INDEX_AUTO, 2);
+     E32(ib, draw_conf->num_indices);
+-    E32(ib, draw_conf->vgt_draw_initiator);
++    E32(ib, draw_conf->vgt_draw_initiator); */
++
++    ib_head = (pointer)(char*)ib->address;
++x = ib->used>>2;
++
++
++ ib_head[x]= RADEON_CP_PACKET3 | (IT_SET_CONFIG_REG << 8) | 0x10000;
++ ib_head[x+1]= (((VGT_PRIMITIVE_TYPE) - SET_CONFIG_REG_offset) >> 2); 
++ ib_head[x+2]= draw_conf->prim_type; 
++
++ ib_head[x+3] = RADEON_CP_PACKET3 | IT_INDEX_TYPE << 8;
++ ib_head[x+4] = draw_conf->index_type;
++ ib_head[x+5] = RADEON_CP_PACKET3 | IT_NUM_INSTANCES << 8;
++ ib_head[x+6] = draw_conf->num_instances;
++ ib_head[x+7] = RADEON_CP_PACKET3 | (IT_DRAW_INDEX_AUTO << 8) | 0x10000;
++ ib_head[x+8] = draw_conf->num_indices;
++ ib_head[x+9] = draw_conf->vgt_draw_initiator;
++
++    ib->used += 40;
++
+ }
+ 
+ #define R6XX_LOOP_COUNT    2000000
+@@ -1163,11 +1471,13 @@ R6xxIdleLocal(int scrnIndex)
+     int i;
+ 
+     /* wait for fifo to clear */
+-    for (i = 0; i < R6XX_LOOP_COUNT; i++) {
+-	if (rhdPtr->ChipSet >= RHD_RV770) {
++    if (rhdPtr->ChipSet >= RHD_RV770) {
++        for (i = 0; i < R6XX_LOOP_COUNT; i++) { 
+ 	    if (8 == (RHDRegRead(pScrn, GRBM_STATUS) & R700_CMDFIFO_AVAIL_mask))
+ 		break;
+-	} else {
++        }
++    } else {
++        for (i = 0; i < R6XX_LOOP_COUNT; i++) {
+ 	    if (16 == (RHDRegRead(pScrn, GRBM_STATUS) & R600_CMDFIFO_AVAIL_mask))
+ 		break;
+ 	}
+diff --git a/src/r6xx_accel.h b/src/r6xx_accel.h
+index b86f9b3..6067ca1 100644
+--- a/src/r6xx_accel.h
++++ b/src/r6xx_accel.h
+@@ -30,6 +30,7 @@ R600LoadShaders(ScrnInfoPtr pScrn);
+ 
+ struct r6xx_accel_state {
+     Bool XHas3DEngineState;
++    Bool Virtex_Flush_Quirk;
+ 
+     int               exaSyncMarker;
+     int               exaMarkerSynced;
