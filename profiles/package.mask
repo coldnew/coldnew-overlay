@@ -1,5 +1,5 @@
 =sys-kernel/coldnew-sources-2.6.31_rc6
-=x11-base/xorg-server-9999.ebuild
+=x11-base/xorg-server-9999
 =x11-base/x11-drm-99999999 
 =media-libs/mesa-9999 
 =x11-libs/libdrm-9999 
