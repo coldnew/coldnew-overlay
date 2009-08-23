@@ -5,3 +5,5 @@
 =x11-libs/libdrm-9999 
 =x11-drivers/xf86-video-ati-9999
 =x11-apps/drm-progs-99999999
+=sys-fs/udev-145
+
