@@ -1,0 +1,11 @@
+--- a/Makefile	2009-08-17 14:13:18.963057000 +0800
++++ b/Makefile	2009-08-17 17:18:39.264059556 +0800
+@@ -1,7 +1,7 @@
+ VERSION = 2
+ PATCHLEVEL = 6
+ SUBLEVEL = 31
+-EXTRAVERSION =
++EXTRAVERSION = -coldnew
+ NAME = Man-Eating Seals of Antiquity
+ 
+ # *DOCUMENTATION*
