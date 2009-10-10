@@ -12,10 +12,10 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~x86 ~amd64 x86 amd64"
 IUSE=""
-DEPEND="
-	   "
+DEPEND=""
 RDEPEND=${DEPEND}
 MAKEOPTS="-j1"
+FEATURES="-sandbox -usersandbox" 
 
 #S=${WORKDIR}/${MY_P}
 
@@ -25,14 +25,12 @@ src_unpack() {
 }
 
 src_compile() {
-	#econf
-#	make
-	echo `pwd`
 	emake || die
 }
 
 src_install() {
 	cd "${S}"
-	make DESTDIR="${D}" install || die
+	make INSTALL_ROOT="${D}" install || die
+#	make DESTDIR="${D}" install || die
 }
 
