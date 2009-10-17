@@ -39,12 +39,13 @@ src_unpack() {
 	cd "${S}"
 
 	#epatch "${FILESDIR}"/man-1.6f-new_compressors-1.patch
+	epatch "${FILESDIR}"/man-1.6f-i18n-1.patch
 	epatch "${FILESDIR}"/man-1.6f-man2html-compression.patch
 	epatch "${FILESDIR}"/man-1.6-cross-compile.patch
 	epatch "${FILESDIR}"/man-1.5p-search-order.patch
-	epatch "${FILESDIR}"/man-1.6f-unicode.patch #146315
+	#epatch "${FILESDIR}"/man-1.6f-unicode.patch #146315
 	epatch "${FILESDIR}"/man-1.5p-defmanpath-symlinks.patch
-	epatch "${FILESDIR}"/man-1.6b-more-sections.patch
+	#epatch "${FILESDIR}"/man-1.6b-more-sections.patch
 	epatch "${FILESDIR}"/man-1.6c-cut-duplicate-manpaths.patch
 	epatch "${FILESDIR}"/man-1.5m2-apropos.patch
 	epatch "${FILESDIR}"/man-1.6d-fbsd.patch
@@ -55,6 +56,7 @@ src_unpack() {
 	# to display control chars automatically
 	epatch "${FILESDIR}"/man-1.6f-noenv.patch
 	#epatch "${FILESDIR}"/man-1.6f-compress.patch
+	#epatch "${FILESDIR}"/man-1.6f-i18n-1.patch
 	epatch "${FILESDIR}"/man-1.6f-new_compressors-1.patch
 
 	strip-linguas $(eval $(grep ^LANGUAGES= configure) ; echo ${LANGUAGES//,/ })

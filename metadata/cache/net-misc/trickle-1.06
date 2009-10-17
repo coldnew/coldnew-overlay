@@ -1,0 +1,22 @@
+dev-libs/libevent =sys-devel/automake-1.10* >=sys-devel/autoconf-2.61 sys-devel/libtool
+dev-libs/libevent
+0
+http://monkey.org/~marius/trickle/trickle-1.06.tar.gz
+
+http://monkey.org/~marius/pages/?page=trickle
+BSD
+portable lightweight userspace bandwidth shaper
+~amd64
+autotools eutils libtool multilib portability toolchain-funcs
+
+
+
+
+2
+
+install prepare
+
+
+
+
+

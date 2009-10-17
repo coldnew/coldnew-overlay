@@ -1,0 +1,22 @@
+>=sys-libs/gdbm-1.8.0 emacs? ( virtual/emacs ) readline? ( sys-libs/readline ) sys-apps/texinfo
+>=sys-libs/gdbm-1.8.0 emacs? ( virtual/emacs ) readline? ( sys-libs/readline )
+0
+mirror://sourceforge/librep/librep-0.90.0.tar.bz2
+
+http://librep.sourceforge.net/
+GPL-2
+Shared library implementing a Lisp dialect
+~alpha ~amd64 ~ia64 ~ppc ~ppc64 ~sparc ~x86
+elisp-common eutils multilib portability toolchain-funcs
+emacs readline
+
+
+
+
+
+compile install postinst postrm unpack
+
+
+
+
+

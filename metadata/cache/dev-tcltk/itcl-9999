@@ -1,0 +1,22 @@
+dev-lang/tcl =sys-devel/automake-1.10* >=sys-devel/autoconf-2.61 sys-devel/libtool dev-util/cvs
+dev-lang/tcl
+0
+
+
+http://incrtcl.sourceforge.net/
+BSD
+Object Oriented Enhancements for Tcl/Tk
+alpha amd64 ia64 ppc sparc x86
+autotools cvs eutils libtool multilib portability toolchain-funcs
+
+
+
+
+
+
+compile install unpack
+
+
+
+
+

@@ -1,0 +1,22 @@
+
+
+0
+http://dl1.pro.antivir.de/package/mailgate/unix/en/antivir-mailgate-prof.tgz
+strip mirror
+http://www.avira.com/
+AVIRA-AntiVir
+AVIRA AntiVir virus scanner (SAVAPI)
+~x86 ~amd64
+eutils multilib portability toolchain-funcs
+
+
+
+
+
+
+config install setup unpack
+
+
+
+
+

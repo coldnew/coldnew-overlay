@@ -1,5 +1,14 @@
---- man-1.6f.org/configure	2009-07-25 17:05:25.648168866 +0800
-+++ man-1.6f/configure	2009-07-25 17:06:06.668920228 +0800
+Submitted By: Jim Gifford <jim at cross-lfs dot org>
+Date: 2009-02-21
+Initial Package Version: 1.6f
+Upstream Status: Unknown
+Origin: Jim Gifford
+Description: For using lzip compression
+             For using xz compression
+
+diff -Naur man-1.6f.orig/configure man-1.6f/configure
+--- man-1.6f.orig/configure	2007-08-20 21:15:21.000000000 -0700
++++ man-1.6f/configure	2009-02-22 19:30:14.602512641 -0800
 @@ -1015,7 +1015,7 @@
    then
      DO_COMPRESSION=true
@@ -50,12 +59,12 @@
  	bzip2)
  	  echo "Command to use for .bz2 files (standard bzip2)"
  	  echo $n "[`eval echo \\$$filter`] $c" ;;
-+          xz)
-+           echo "Command to use for .xz files (standard xz)"
-+           echo $n "[`eval echo \\$$filter`] $c" ;;
-+        lzip)
-+           echo "Command to use for .lz files (standard lzip)"
-+           echo $n "[`eval echo \\$$filter`] $c" ;;
++	xz)
++	  echo "Command to use for .xz files (standard xz)"
++	  echo $n "[`eval echo \\$$filter`] $c" ;;
++	lzip)
++	  echo "Command to use for .lz files (standard lzip)"
++	  echo $n "[`eval echo \\$$filter`] $c" ;;
  	lzma)
  	  echo "Command to use for .lzma files (standard lzma)"
  	  echo $n "[`eval echo \\$$filter`] $c" ;;
@@ -77,14 +86,15 @@
  s,@unlzma@,$unlzma,
  s,@unyabba@,$unyabba,
  s,@compress@,$compress,
---- man-1.6f.orig/src/man.conf.in	2009-07-25 16:57:17.426174022 +0800
-+++ man-1.6f/src/man.conf.in	2009-07-25 17:10:00.054919911 +0800
+diff -Naur man-1.6f.orig/src/man.conf.in man-1.6f/src/man.conf.in
+--- man-1.6f.orig/src/man.conf.in	2007-08-20 21:15:21.000000000 -0700
++++ man-1.6f/src/man.conf.in	2009-02-22 19:30:38.916070400 -0800
 @@ -132,6 +132,8 @@
  #
  .gz		@gunzip@
  .bz2		@bzip2@
-+.xz             @unxz@
-+.lz             @lzip@
++.xz		@unxz@
++.lz		@lzip@
  .lzma		@unlzma@
  .z		@pcat@
  .Z		@zcat@

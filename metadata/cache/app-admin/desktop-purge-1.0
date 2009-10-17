@@ -1,0 +1,22 @@
+
+
+0
+mirror://sourceforge/coldnew-overlay/desktop-purge-1.0.tar.lzma
+
+
+GPL-2
+
+~x86 ~amd64 x86 amd64
+eutils multilib portability toolchain-funcs
+
+
+
+
+
+
+compile install unpack
+
+
+
+
+

@@ -1,0 +1,22 @@
+>=dev-lang/tcl-8.4 >=dev-lang/tk-8.4 >=dev-tcltk/tls-1.4.1 xft? ( >=dev-lang/tcl-8.5 >=dev-lang/tk-8.5 ) skins? ( =net-im/amsn-extras-9999 ) plugins? ( =net-im/amsn-extras-9999 ) dev-util/subversion net-misc/rsync =sys-devel/automake-1.10* >=sys-devel/autoconf-2.61 sys-devel/libtool
+>=dev-lang/tcl-8.4 >=dev-lang/tk-8.4 >=dev-tcltk/tls-1.4.1 xft? ( >=dev-lang/tcl-8.5 >=dev-lang/tk-8.5 ) skins? ( =net-im/amsn-extras-9999 ) plugins? ( =net-im/amsn-extras-9999 )
+0
+
+
+http://amsn.sourceforge.net
+GPL-2
+Alvaro's Messenger client for MSN
+~alpha amd64 ~hppa ~ppc ~sparc x86
+autotools eutils libtool multilib portability subversion toolchain-funcs
+debug nolibng static gnome kde skins plugins xft
+
+
+
+
+
+compile install postinst preinst setup unpack
+
+
+
+
+

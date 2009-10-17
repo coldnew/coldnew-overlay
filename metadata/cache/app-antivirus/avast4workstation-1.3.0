@@ -1,0 +1,22 @@
+sys-libs/glibc sys-libs/zlib gtk? ( >=x11-base/xorg-x11-7.0 net-libs/libesmtp )
+sys-libs/glibc sys-libs/zlib gtk? ( >=x11-base/xorg-x11-7.0 net-libs/libesmtp )
+0
+http://files.avast.com/files/linux/avast4workstation-1.3.0.tar.gz
+mirror
+http://www.avast.com/eng/avast-for-linux-workstation.html
+Alwil
+avast! Linux Home Edition
+x86 ~amd64
+eutils multilib portability toolchain-funcs
+gtk kde linguas_am linguas_az linguas_bg linguas_bs linguas_cs linguas_da linguas_el linguas_en_GB linguas_es linguas_eu linguas_fi linguas_ga linguas_gu linguas_hi linguas_hu linguas_is linguas_ja linguas_lt linguas_mk linguas_ms linguas_ne linguas_nn linguas_pl linguas_pt_BR linguas_ru linguas_sk linguas_sq linguas_sv linguas_tl linguas_uk linguas_wa linguas_zh_TW linguas_ar linguas_be linguas_bn linguas_ca linguas_cy linguas_de linguas_eo linguas_et linguas_fa linguas_fr linguas_gl linguas_he linguas_hr linguas_id linguas_it linguas_ko linguas_lv linguas_mn linguas_nb linguas_nl linguas_no linguas_pa linguas_pt linguas_ro linguas_rw linguas_sl linguas_sr linguas_sr@Latn linguas_ta linguas_tr linguas_vi linguas_xh linguas_zh_CN
+
+
+
+
+
+install
+
+
+
+
+

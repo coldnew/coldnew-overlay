@@ -12,7 +12,7 @@ HOMEPAGE="http://www.k3b.org/"
 SRC_URI="mirror://sourceforge/${PN}/${MY_P}.tar.bz2"
 
 LICENSE="GPL-2"
-SLOT="2"
+SLOT="4"
 KEYWORDS="~amd64 ~x86"
 IUSE="debug dvd emovix encode ffmpeg flac mad lame musicbrainz musepack sndfile sox taglib vorbis +wav"
 

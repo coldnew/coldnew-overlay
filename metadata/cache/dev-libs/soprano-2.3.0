@@ -1,0 +1,22 @@
+x11-libs/qt-core:4 clucene? ( dev-cpp/clucene ) dbus? ( x11-libs/qt-dbus:4 ) raptor? ( >=media-libs/raptor-1.4.16 ) redland? ( >=dev-libs/rasqal-0.9.15 >=dev-libs/redland-1.0.6 ) java? ( >=virtual/jdk-1.6.0 ) doc? ( app-doc/doxygen ) >=dev-util/cmake-2.6.2-r1 userland_GNU? ( >=sys-apps/findutils-4.4.0 ) java? ( >=dev-java/java-config-2.1.6 )
+x11-libs/qt-core:4 clucene? ( dev-cpp/clucene ) dbus? ( x11-libs/qt-dbus:4 ) raptor? ( >=media-libs/raptor-1.4.16 ) redland? ( >=dev-libs/rasqal-0.9.15 >=dev-libs/redland-1.0.6 ) java? ( >=virtual/jdk-1.6.0 ) java? ( >=dev-java/java-config-2.1.6 )
+0
+mirror://sourceforge/soprano/soprano-2.3.0.tar.bz2
+
+http://sourceforge.net/projects/soprano
+LGPL-2
+Library that provides a nice QT interface to RDF storage solutions
+~amd64 ~hppa ~ppc ~ppc64 ~x86
+base cmake-utils eutils flag-o-matic java-pkg-opt-2 java-utils-2 multilib portability toolchain-funcs versionator
++clucene +dbus debug doc elibc_FreeBSD java +raptor +redland elibc_FreeBSD java
+
+
+
+2
+
+compile configure install preinst prepare setup test unpack
+
+
+
+
+

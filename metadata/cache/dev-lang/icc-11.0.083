@@ -1,0 +1,22 @@
+>=app-arch/rpm2targz-9.0.0.3g
+virtual/libstdc++ amd64? ( app-emulation/emul-linux-x86-compat )
+0
+amd64? ( http://registrationcenter-download.intel.com/irc_nas/1431/l_cproc_p_11.0.083_intel64.tgz ) ia64? ( http://registrationcenter-download.intel.com/irc_nas/1431/l_cproc_p_11.0.083_ia64.tgz ) x86? ( http://registrationcenter-download.intel.com/irc_nas/1431/l_cproc_p_11.0.083_ia32.tgz )
+test strip mirror
+http://www.intel.com/software/products/compilers/clin/
+Intel-SDP
+Intel C/C++ optimized compiler for Linux
+amd64 ia64 x86
+eutils multilib portability rpm toolchain-funcs
+
+
+
+
+
+
+install postinst setup unpack
+
+
+
+
+

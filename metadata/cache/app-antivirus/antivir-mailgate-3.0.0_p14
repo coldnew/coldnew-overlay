@@ -1,0 +1,22 @@
+
+>=app-antivirus/antivir-savapi-3 postfix? ( mail-mta/postfix )
+0
+http://dl1.pro.antivir.de/package/mailgate/unix/en/antivir-mailgate-prof.tgz
+strip mirror
+http://www.avira.com/
+AVIRA-AntiVir
+AVIRA AntiVir MailGate SMTP mail virus scanner
+~x86 ~amd64
+eutils multilib pax-utils portability toolchain-funcs
+postfix spamfilter
+
+
+
+
+
+config install postinst preinst setup unpack
+
+
+
+
+

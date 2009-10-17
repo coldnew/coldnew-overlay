@@ -1,0 +1,22 @@
+amd64? ( >=app-emulation/emul-linux-x86-xlibs-1.2 >=app-emulation/emul-linux-x86-baselibs-2.1.1 >=app-emulation/emul-linux-x86-soundlibs-2.4 app-emulation/emul-linux-x86-compat ) x86? ( >=sys-libs/glibc-2.4 >=media-libs/alsa-lib-1.0.11 x11-libs/libXScrnSaver x11-libs/libXv qt-static? ( media-libs/fontconfig media-libs/freetype x11-libs/libICE x11-libs/libSM x11-libs/libXcursor x11-libs/libXext x11-libs/libXfixes x11-libs/libXi x11-libs/libXinerama x11-libs/libXrandr x11-libs/libXrender x11-libs/libX11 ) !qt-static? ( x11-libs/qt-core:4 x11-libs/qt-gui:4[accessibility,dbus] x11-libs/qt-dbus:4 x11-libs/libX11 x11-libs/libXau x11-libs/libXdmcp ) )
+amd64? ( >=app-emulation/emul-linux-x86-xlibs-1.2 >=app-emulation/emul-linux-x86-baselibs-2.1.1 >=app-emulation/emul-linux-x86-soundlibs-2.4 app-emulation/emul-linux-x86-compat ) x86? ( >=sys-libs/glibc-2.4 >=media-libs/alsa-lib-1.0.11 x11-libs/libXScrnSaver x11-libs/libXv qt-static? ( media-libs/fontconfig media-libs/freetype x11-libs/libICE x11-libs/libSM x11-libs/libXcursor x11-libs/libXext x11-libs/libXfixes x11-libs/libXi x11-libs/libXinerama x11-libs/libXrandr x11-libs/libXrender x11-libs/libX11 ) !qt-static? ( x11-libs/qt-core:4 x11-libs/qt-gui:4[accessibility,dbus] x11-libs/qt-dbus:4 x11-libs/libX11 x11-libs/libXau x11-libs/libXdmcp ) )
+0
+!qt-static? ( http://download.skype.com/linux/skype-2.1.0.47.tar.bz2 ) qt-static? ( http://download.skype.com/linux/skype_static-2.1.0.47.tar.bz2 )
+mirror strip
+http://www.skype.com/
+skype-eula
+A P2P-VoiceIP client.
+amd64 x86
+base eutils multilib portability qt4 toolchain-funcs versionator
+qt-static
+
+
+
+2
+
+compile configure install prepare setup unpack
+
+
+
+
+
