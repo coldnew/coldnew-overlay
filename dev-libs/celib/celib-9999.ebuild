@@ -4,7 +4,7 @@
 
 inherit eutils cmake-utils git
 
-DESCRIPTION="coldnew's c libraries designed for cemacs"
+DESCRIPTION="coldnew's C libraries designed for cemacs"
 HOMEPAGE=""
 SRC_URI=""
 EGIT_REPO_URI="git://github.com/coldnew/celib.git"
