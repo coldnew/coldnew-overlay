@@ -4,12 +4,12 @@
 
 inherit eutils cmake-utils git
 
-DESCRIPTION=""
+DESCRIPTION="coldnew's c libraries designed for cemacs"
 HOMEPAGE=""
-#SRC_URI="git://github.com/coldnew/celib.git"
+SRC_URI=""
 EGIT_REPO_URI="git://github.com/coldnew/celib.git"
 
-LICENSE="GPL-3"
+LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
 IUSE=""
@@ -22,27 +22,17 @@ MAKEOPTS="-j1"
 
 
 src_unpack() {
-git_src_unpack
+	git_src_unpack
 	cd "${S}"
-
-
 }
 
 src_compile() {
 	mycmakeargs="${mycmakeargs}"
-
 	cmake-utils_src_compile
-
-#econf || die "configure failed"
-#	emake || die
 }
 
 src_install() {
 	cmake-utils_src_install
-
-	#cd "${S}"
-	#make DESTDIR="${D}" install || die
-
 	dodoc README
 }
 
