@@ -10,7 +10,7 @@ SRC_URI="http://gnome2-globalmenu.googlecode.com/files/${P}.tar.bz2"
 
 LICENSE="GPLv2"
 SLOT="0"
-KEYWORDS="~x86"
+KEYWORDS="~x86 ~amd64"
 IUSE="gnome xfce test"
 
 DEPEND=">=x11-libs/gtk+-2.10.0

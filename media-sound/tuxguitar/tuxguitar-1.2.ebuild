@@ -1,8 +1,8 @@
-# Copyright 1999-2008 Gentoo Foundation
+# Copyright 1999-2009 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: $
+# $Header: /home/robert/ebuilds/tuxguitar-1.2-r1.ebuild,v 1.2 2009/11/13 16:12:45 robert Exp $
 
-EAPI=1
+EAPI="2"
 JAVA_PKG_IUSE="source"
 
 inherit eutils java-pkg-2 java-ant-2 toolchain-funcs flag-o-matic fdo-mime gnome2-utils
@@ -13,38 +13,29 @@ HOMEPAGE="http://www.tuxguitar.com.ar/"
 SRC_URI="mirror://sourceforge/${PN}/${MY_P}.tar.gz"
 LICENSE="LGPL-2.1"
 SLOT="0"
-IUSE="alsa fluidsynth ftp oss pdf"
+IUSE="alsa fluidsynth oss pdf"
+
+# Test notes
+# Couldn't get JSA plugin working out of the box with IcedTea.
 
 KEYWORDS="~amd64 ~x86"
-
-CDEPEND=">=dev-java/swt-3.4
+CDEPEND="dev-java/swt:3.4[cairo]
 	alsa? ( media-libs/alsa-lib )
 	fluidsynth? ( media-sound/fluidsynth )
 	pdf? ( dev-java/itext:0 )"
-
-RDEPEND=">=virtual/jre-1.6
-	alsa? ( media-sound/timidity++ )
-	oss? ( media-sound/timidity++ )
+RDEPEND=">=virtual/jre-1.5
+	alsa? ( media-sound/timidity++[alsa] )
+	oss? ( media-sound/timidity++[oss] )
 	${CDEPEND}"
 
-DEPEND=">=virtual/jdk-1.6
+DEPEND=">=virtual/jdk-1.5
 	${CDEPEND}"
 
 S="${WORKDIR}/${MY_P}"
 
-pkg_setup() {
-	if ! built_with_use 'dev-java/swt' 'cairo'; then
-		eerror "You must build dev-java/swt with cairo support"
-		die "dev-java/swt built without cairo"
-	fi
-	java-pkg-2_pkg_setup
-}
-
-src_unpack() {
- 
-	unpack ${A}
-	cd "${S}/TuxGuitar/lib"
-	java-pkg_jar-from swt-3.4
+src_prepare() {
+	java-pkg_jar-from --into TuxGuitar/lib swt-3.4
+	java-pkg-2_src_prepare
 }
 
 src_compile() {
@@ -64,11 +55,11 @@ src_install() {
 	cd TuxGuitar || die "cd failed"
 	java-pkg_dojar tuxguitar.jar
 	use source && java-pkg_dosrc src/org
-
+	# TODO: Decide if plugin sources should be installed
 	java-pkg_dolauncher ${PN} \
 		--main org.herac.tuxguitar.gui.TGMain \
-		--java_args "-Xms128m -Xmx128m"
-
+		--java_args "-Xms128m -Xmx128m  -Dtuxguitar.share.path=/usr/share/${PN}/lib/share"
+	# Images and Files
 	insinto /usr/share/${PN}/lib
 	doins -r share || die "doins failed"
 	java-pkg_sointo /usr/share/${PN}/lib/lib
@@ -98,19 +89,17 @@ plugin_install() {
 	local BINARY_NAME=tuxguitar-${1}
 	insinto ${TUXGUITAR_INST_PATH}/share/plugins
 	doins ${BINARY_NAME}.jar || die "doins ${BINARY_NAME}.jar failed"
-
 	#TuxGuitar has its own classloader. No need to register the plugins.
 	if [[ -d jni ]]; then
 		java-pkg_doso jni/lib${BINARY_NAME}-jni.so
 	fi
 }
 
+#Return list of plugins to compile/install
 list_plugins() {
-	echo ascii compat converter gtp jsa lilypond midi musicxml ptb tef tray
-	echo $(usev alsa) $(usev fluidsynth) $(usev oss) $(usev pdf)
-	if use ftp; then
-		echo browser-ftp
-	fi
+	echo \
+		$(usev alsa) ascii browser-ftp compat converter $(usev fluidsynth) gtp \
+		jsa lilypond midi musicxml $(usev oss) $(usev pdf) ptb tef tray tuner
 }
 
 pkg_postinst() {

@@ -15,7 +15,7 @@ SRC_URI=""
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~x86 ~amd64"
 IUSE="kde"
 
 DEPEND="dev-util/cmake"
