@@ -1,0 +1,56 @@
+--- configure.in.orig	2009-07-30 17:30:11.000000000 +0200
++++ configure.in	2009-08-20 13:55:08.000000000 +0200
+@@ -7013,18 +7013,18 @@
+ AC_SUBST(MOZ_PROFILE_GUIDED_OPTIMIZE_DISABLE)
+ 
+ _SAVE_CFLAGS="$CFLAGS"
+-CFLAGS="$CFLAGS -fprofile-generate"
++CFLAGS="$CFLAGS -fprofile-generate -fprofile-correction"
+ 
+ AC_MSG_CHECKING([whether C compiler supports -fprofile-generate])
+ AC_TRY_COMPILE([], [return 0;],
+-               [ PROFILE_GEN_CFLAGS="-fprofile-generate"
++               [ PROFILE_GEN_CFLAGS="-fprofile-generate -fprofile-correction"
+                  result="yes" ], result="no")
+ AC_MSG_RESULT([$result])
+ 
+ if test $result = "yes"; then
+   PROFILE_GEN_LDFLAGS="-fprofile-generate"
+-  PROFILE_USE_CFLAGS="-fprofile-use"
+-  PROFILE_USE_LDFLAGS="-fprofile-use"
++  PROFILE_USE_CFLAGS="-fprofile-use -fprofile-correction"
++  PROFILE_USE_LDFLAGS="-fprofile-use -fprofile-correction"
+ else
+   CFLAGS="$_SAVE_CFLAGS -fprofile-arcs"
+   AC_MSG_CHECKING([whether C compiler supports -fprofile-arcs])
+--- configure.orig	2009-08-20 13:56:05.000000000 +0200
++++ configure	2009-08-20 13:58:17.000000000 +0200
+@@ -18739,7 +18739,7 @@
+ 
+ 
+ _SAVE_CFLAGS="$CFLAGS"
+-CFLAGS="$CFLAGS -fprofile-generate"
++CFLAGS="$CFLAGS -fprofile-generate -fprofile-correction"
+ 
+ echo $ac_n "checking whether C compiler supports -fprofile-generate""... $ac_c" 1>&6
+ echo "configure:18746: checking whether C compiler supports -fprofile-generate" >&5
+@@ -18753,7 +18753,7 @@
+ EOF
+ if { (eval echo configure:18755: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+-   PROFILE_GEN_CFLAGS="-fprofile-generate"
++   PROFILE_GEN_CFLAGS="-fprofile-generate -fprofile-correction"
+                  result="yes" 
+ else
+   echo "configure: failed program was:" >&5
+@@ -18766,8 +18766,8 @@
+ 
+ if test $result = "yes"; then
+   PROFILE_GEN_LDFLAGS="-fprofile-generate"
+-  PROFILE_USE_CFLAGS="-fprofile-use"
+-  PROFILE_USE_LDFLAGS="-fprofile-use"
++  PROFILE_USE_CFLAGS="-fprofile-use -fprofile-correction"
++  PROFILE_USE_LDFLAGS="-fprofile-use -fprofile-correction"
+ else
+   CFLAGS="$_SAVE_CFLAGS -fprofile-arcs"
+   echo $ac_n "checking whether C compiler supports -fprofile-arcs""... $ac_c" 1>&6
