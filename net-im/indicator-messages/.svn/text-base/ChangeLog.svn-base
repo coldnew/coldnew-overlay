@@ -1,0 +1,20 @@
+# ChangeLog for net-im/indicator-messages
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com>
+  +indicator-messages-0.3.6.ebuild, +metadata.xml:
+  initial commit, fork from portage
+
+*indicator-messages-0.3.6 (04 Apr 2010)
+
+  04 Apr 2010; Romain Perier <mrpouet@gentoo.org>
+  +indicator-messages-0.3.6.ebuild:
+  Version bump.
+
+*indicator-messages-0.1.6 (26 Aug 2009)
+
+  26 Aug 2009; Samuli Suominen <ssuominen@gentoo.org>
+  +indicator-messages-0.1.6.ebuild:
+  Initial commit.
+
