@@ -1,49 +1,27 @@
-# Copyright 1999-2009 Gentoo Foundation
+# Copyright 1999-2010 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/app-admin/eselect/eselect-9999.ebuild,v 1.2 2009/04/28 09:50:12 ulm Exp $
+# $Header: $
 
-EAPI=2
+EAPI="2"
 
-MY_PN="cloudcity"
-ESVN_REPO_URI="https://cloudcity.svn.sourceforge.net/svnroot/${MY_PN}"
+inherit kde4-base
 
-inherit subversion
-
-DESCRIPTION="Style for Qt4, derived from the Style for the Oxygen project"
-HOMEPAGE="http://sourceforge.net/projects/cloudcity/"
-SRC_URI=""
+DESCRIPTION="A KDE4 follow-up to Baghira KDE Theme Engine, which resembles Mac OS X"
+HOMEPAGE="http://cloudcity.sourceforge.net/"
+ESVN_REPO_URI="https://cloudcity.svn.sourceforge.net/svnroot/cloudcity"
 
 LICENSE="GPL-2"
+KEYWORDS=""
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
-IUSE="kde"
-
-DEPEND="dev-util/cmake"
-
-RDEPEND="x11-libs/qt-core:4
-        kde? ( =kde-base/kdelibs-4* )"
-
-S="${WORKDIR}/${MY_PN}"
-BUILD_DIR=""
-use kde && BUILD_DIR="build"
+IUSE="debug"
 
 src_configure() {
-	cd ${S} || die "cd ${S} failed"
-	if use kde ; then
-		mkdir build
-		cd build
-		cmake -DCMAKE_INSTALL_PREFIX=`kde4-config --prefix` -DCMAKE_BUILD_TYPE=Release .. || die "cmake failed"
-	else
-		eqmake4 qmake.pro || die "eqmake4 failed"
-	fi
-}
+	# these two are no-deps options
+	# no need to have them useflaged
+	mycmakeargs=(
+		-DENABLE_XBAR=ON
+		-DENABLE_ARGB=ON
+	)
 
-src_compile() {
-	cd ${S}/${BUILD_DIR}
-	emake
-}
-
-src_install() {
-	cd "${S}/${BUILD_DIR}"
-	emake DESTDIR="${D}" install || die "make install failed"
+	kde4-base_src_configure
 }
