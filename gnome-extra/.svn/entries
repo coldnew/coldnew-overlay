@@ -1,64 +1,0 @@
-10
-
-dir
-53
-http://ubuntu-overlay.googlecode.com/svn/trunk/gnome-extra
-http://ubuntu-overlay.googlecode.com/svn
-
-
-
-2010-05-08T13:58:27.623826Z
-46
-coderoar
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-663825d1-6dad-2eee-5197-dd41b80126d1
-
-indicator-applet
-dir
-
-sensors-applet
-dir
-
-ubuntuone-client
-dir
-
-indicator-sound
-dir
-
-gnome-screensaver
-dir
-
-nautilus-share
-dir
-
-polkit-gnome
-dir
-
-gnome-power-manager
-dir
-
-indicator-me
-dir
-
-gnome-exe-thumbnailer
-dir
-
-indicator-application
-dir
-
-indicator-session
-dir
-
