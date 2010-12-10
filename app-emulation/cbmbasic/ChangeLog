@@ -1,8 +1,0 @@
-# ChangeLog for app-emulation/cbmbasic
-# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
-# $Header: $
-
-*cbmbasic-0 (31 Oct 2008)
-
-  31 Oct 2008; Aaron Mavrinac <mavrinac@gmail.com> cbmbasic-0.ebuild: 
-  Initial import
