@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1901/portage/trunk/app-crypt/cpyrit_cuda
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/1901/portage/trunk/app-crypt/cpyrit_cuda/Manifest
+END
+cpyrit_cuda-0.3-r1.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/1850/portage/trunk/app-crypt/cpyrit_cuda/cpyrit_cuda-0.3-r1.ebuild
+END
+cpyrit_cuda-9999.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/1901/portage/trunk/app-crypt/cpyrit_cuda/cpyrit_cuda-9999.ebuild
+END

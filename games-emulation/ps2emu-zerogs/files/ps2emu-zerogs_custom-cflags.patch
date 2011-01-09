@@ -1,0 +1,19 @@
+diff -ur opengl.bak/configure.ac opengl/configure.ac
+--- opengl.bak/configure.ac	2009-03-09 23:29:19.618305260 -0400
++++ opengl/configure.ac	2009-03-09 23:40:34.899022366 -0400
+@@ -36,14 +32,9 @@
+ if test "x$debug" == xyes
+ then
+  AC_DEFINE(_DEBUG,1,[_DEBUG])
+- CFLAGS+="-g "
+- CPPFLAGS+="-g "
+- CXXFLAGS+="-g -fpermissive "
++ CXXFLAGS+="-fpermissive "
+ else
+  AC_DEFINE(NDEBUG,1,[NDEBUG])
+- CFLAGS+="-O3 -fomit-frame-pointer "
+- CPPFLAGS+="-O3 -fomit-frame-pointer "
+- CXXFLAGS+="-O3 -fomit-frame-pointer "
+ fi
+ AC_MSG_RESULT($debug)
+ 
