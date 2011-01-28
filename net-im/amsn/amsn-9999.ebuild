@@ -3,7 +3,7 @@
 
 ESVN_REPO_URI="https://amsn.svn.sourceforge.net/svnroot/amsn/trunk/amsn"
 ESVN_PROJECT="amsn"
-inherit subversion eutils
+inherit  subversion eutils
 
 DESCRIPTION="Alvaro's Messenger client for MSN"
 HOMEPAGE="http://amsn.sourceforge.net"

@@ -1,0 +1,66 @@
+--- a/etc/gccsense.el
++++ b/etc/gccsense.el
+@@ -29,25 +29,26 @@
+   :group 'completion
+   :prefix "gccsense-")
+ 
+-(defcustom gccsense-gccrec-program "gccrec"
+-  "Path to gccrec program."
+-  :type 'string
+-  :group 'gccsense)
+-
+-(defcustom gccsense-autopch-program "autopch"
+-  "Path to autopch program."
+-  :type 'string
+-  :group 'gccsense)
+-
+-(defcustom gccsense-c-driver "gcc-code-assist"
+-  "Path to C compiler driver."
+-  :type 'string
+-  :group 'gccsense)
+-
+-(defcustom gccsense-c++-driver "g++-code-assist"
+-  "Path to C++ compiler driver."
+-  :type 'string
+-  :group 'gccsense)
++(eval-and-compile
++  (defcustom gccsense-gccrec-program "gccrec"
++    "Path to gccrec program."
++    :type 'string
++    :group 'gccsense)
++
++  (defcustom gccsense-autopch-program "autopch"
++    "Path to autopch program."
++    :type 'string
++    :group 'gccsense)
++
++  (defcustom gccsense-c-driver "gcc-code-assist"
++    "Path to C compiler driver."
++    :type 'string
++    :group 'gccsense)
++
++  (defcustom gccsense-c++-driver "g++-code-assist"
++    "Path to C++ compiler driver."
++    :type 'string
++    :group 'gccsense))
+ 
+ (defcustom gccsense-use-autopch t
+   "Whether or not use autopch program. This may improve performance."
+@@ -294,12 +295,13 @@
+          (message "Everything OK!"))
+      (error)))
+ 
+-(defmacro gccsense-diagnose-check-program (path)
+-  `((eq (call-process ,path nil nil nil "--version") 0)
+-    ,(format "`%s' is not executable from Emacs or returned error.
++(eval-and-compile
++  (defmacro gccsense-diagnose-check-program (path)
++    `((eq (call-process ,path nil nil nil "--version") 0)
++      ,(format "`%s' is not executable from Emacs or returned error.
+ Make sure that the program was correctly installed and can be run from terminal.
+ You may add a directory where the program was installed into `exec-path' variable."
+-             (symbol-value path))))
++	       (symbol-value path)))))
+ 
+ (defun gccsense-diagnose ()
+   (interactive)
