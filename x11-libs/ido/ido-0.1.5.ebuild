@@ -11,7 +11,7 @@ SRC_URI="mirror://ubuntu/pool/main/i/${PN}/${PN}_${PV}.orig.tar.gz"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE=""
+IUSE="nls"
 
 RDEPEND="
 	>=dev-libs/atk-1.29.3

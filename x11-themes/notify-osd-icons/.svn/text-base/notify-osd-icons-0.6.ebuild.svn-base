@@ -18,8 +18,7 @@ IUSE=""
 RDEPEND="
 	>=x11-misc/icon-naming-utils-0.8.90
 	media-gfx/imagemagick
-	>=gnome-base/librsvg-2.26.0
-	x11-misc/notify-osd"
+	>=gnome-base/librsvg-2.26.0"
 DEPEND="${RDEPEND}
 	dev-util/pkgconfig
 	dev-util/intltool

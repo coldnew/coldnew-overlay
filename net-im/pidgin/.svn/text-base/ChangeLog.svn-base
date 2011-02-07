@@ -2,6 +2,12 @@
 # Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+*pidgin-2.7.6 (02 Dec 2010)
+
+  02 Dec 2010; Coderoar <coderoar@gmail.com> -pidgin-2.6.6.ebuild,
+  +files/pidgin-2.7.3-ldflags.patch, +pidgin-2.7.6.ebuild:
+  version bump, remove obsolete
+
   07 Apr 2010; Coderoar <coderoar@gmail.com> +pidgin-2.6.6.ebuild,
   +metadata.xml:
   initial commit, fork from portage

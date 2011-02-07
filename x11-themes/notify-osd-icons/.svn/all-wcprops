@@ -1,7 +1,7 @@
 K 25
 svn:wc:ra_dav:version-url
 V 50
-/svn/!svn/ver/49/trunk/x11-themes/notify-osd-icons
+/svn/!svn/ver/63/trunk/x11-themes/notify-osd-icons
 END
 metadata.xml
 K 25
@@ -13,17 +13,17 @@ Manifest
 K 25
 svn:wc:ra_dav:version-url
 V 59
-/svn/!svn/ver/49/trunk/x11-themes/notify-osd-icons/Manifest
+/svn/!svn/ver/63/trunk/x11-themes/notify-osd-icons/Manifest
 END
 ChangeLog
 K 25
 svn:wc:ra_dav:version-url
 V 60
-/svn/!svn/ver/49/trunk/x11-themes/notify-osd-icons/ChangeLog
+/svn/!svn/ver/63/trunk/x11-themes/notify-osd-icons/ChangeLog
 END
 notify-osd-icons-0.6.ebuild
 K 25
 svn:wc:ra_dav:version-url
 V 78
-/svn/!svn/ver/49/trunk/x11-themes/notify-osd-icons/notify-osd-icons-0.6.ebuild
+/svn/!svn/ver/63/trunk/x11-themes/notify-osd-icons/notify-osd-icons-0.6.ebuild
 END

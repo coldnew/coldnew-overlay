@@ -1,7 +1,7 @@
 K 25
 svn:wc:ra_dav:version-url
-V 34
-/svn/!svn/ver/7/trunk/x11-libs/ido
+V 35
+/svn/!svn/ver/56/trunk/x11-libs/ido
 END
 metadata.xml
 K 25
@@ -12,18 +12,18 @@ END
 Manifest
 K 25
 svn:wc:ra_dav:version-url
-V 43
-/svn/!svn/ver/7/trunk/x11-libs/ido/Manifest
+V 44
+/svn/!svn/ver/56/trunk/x11-libs/ido/Manifest
 END
 ChangeLog
 K 25
 svn:wc:ra_dav:version-url
-V 44
-/svn/!svn/ver/7/trunk/x11-libs/ido/ChangeLog
+V 45
+/svn/!svn/ver/56/trunk/x11-libs/ido/ChangeLog
 END
 ido-0.1.5.ebuild
 K 25
 svn:wc:ra_dav:version-url
-V 51
-/svn/!svn/ver/7/trunk/x11-libs/ido/ido-0.1.5.ebuild
+V 52
+/svn/!svn/ver/56/trunk/x11-libs/ido/ido-0.1.5.ebuild
 END

@@ -2,6 +2,9 @@
 # Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  02 Dec 2010; Coderoar <coderoar@gmail.com> notify-osd-icons-0.6.ebuild:
+  update deps
+
 *notify-osd-icons-0.6 (08 May 2010)
 
   08 May 2010; Coderoar <coderoar@gmail.com> +notify-osd-icons-0.6.ebuild,
