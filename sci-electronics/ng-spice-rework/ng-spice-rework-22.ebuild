@@ -7,7 +7,7 @@ EAPI="3"
 inherit autotools eutils
 
 DESCRIPTION="The Next Generation Spice (Electronic Circuit Simulator)."
-SRC_URI="mirror://sourceforge/ngspice/ngspice-${PV}.tar.gz
+SRC_URI="mirror://sourceforge/ngspice/ngspice-${PV}.tar.gz -> ${P}.tar.gz
 	doc? ( http://users.ece.gatech.edu/~mrichard/Xspice/Xspice_Users_Manual.pdf \
 		http://users.ece.gatech.edu/~mrichard/Xspice/XSpice_SoftwareDesignDoc_Sep92.pdf \
 		http://users.ece.gatech.edu/~mrichard/Xspice/XSpice_InterfaceDesignDoc_Sep92.pdf \
@@ -29,10 +29,10 @@ DEPEND="readline? ( >=sys-libs/readline-5.0 )
 S="${WORKDIR}"/ngspice-${PV}
 
 src_prepare() {
-	epatch "${FILESDIR}"/${P}-nostrip.patch
+#	epatch "${FILESDIR}"/${P}-nostrip.patch
 	rm -rf xgraph
 	epatch "${FILESDIR}"/${P}-src_makefile.patch
-	sed -i -e 's/\-O2//' configure.in || die "sed failed"
+#	sed -i -e 's/\-O2//' configure.in || die "sed failed"
 
 	# fix potential buffer overflow (bug 339541)
 	sed -i -e "s/fgets(buf, BSIZE_SP/fgets(buf, sizeof(buf)/g" \
