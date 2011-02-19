@@ -1,0 +1,15 @@
+media-libs/clutter -introspection
+x11-libs/pango -introspection
+dev-libs/json-glib -introspection
+x11-libs/gtk+ -introspection
+dev-libs/atk -introspection
+x11-libs/gdk-pixbuf -introspection
+media-libs/clutter -introspection
+net-wireless/gnome-bluetooth -introspection
+x11-wm/mutter -introspection
+gnome-base/gconf -introspection
+gnome-base/libgnomekbd -introspection
+media-libs/libcanberra -gtk3
+x11-libs/libnotify -introspection
+media-libs/clutter -introspection
+dev-libs/libdbusmenu -introspection
