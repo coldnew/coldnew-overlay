@@ -15,13 +15,13 @@ inherit java-pkg-2 java-ant-2 check-reqs
 BUILD_VER="3.7.0"
 BUILD_ID="I20110613-1736"
 BUILD_LABEL="${BUILD_VER}-${BUILD_ID}"
-ECLIPSE_BUILD_VER="0.7.0"
+ECLIPSE_BUILD_VER="5791c48513b4207ab1eec1e00bed4b2186f9aad5"
 S="${WORKDIR}/eclipse-build-${ECLIPSE_BUILD_VER}"
 
 DESCRIPTION="Eclipse SDK"
 HOMEPAGE="http://www.eclipse.org/eclipse/"
 BASE_URI="http://download.eclipse.org/technology/linuxtools/eclipse-build/3.7.x_Indigo/"
-SRC_URI="${BASE_URI}eclipse-${BUILD_VER}-src.tar.bz2 ${BASE_URI}eclipse-build-${ECLIPSE_BUILD_VER}.tar.bz2"
+SRC_URI="${BASE_URI}eclipse-${BUILD_VER}-src.tar.bz2 ${BASE_URI}eclipse-build-${ECLIPSE_BUILD_VER}.tar.xz"
 
 LICENSE="EPL-1.0"
 SLOT="3.7"
@@ -54,6 +54,7 @@ RDEPEND="${CDEPEND}
 # ant dependencies should really be >=1.8.2
 DEPEND="${CDEPEND}
 	app-arch/unzip
+	app-arch/xz-utils
 	app-arch/zip
 	>=dev-java/ant-antlr-1.8.1
 	>=dev-java/ant-apache-bcel-1.8.1
@@ -151,7 +152,8 @@ src_unpack() {
 	fi
 	check_reqs
 
-	unpack "eclipse-build-${ECLIPSE_BUILD_VER}.tar.bz2"
+	#unpack "eclipse-build-${ECLIPSE_BUILD_VER}.tar.xz"
+	tar -xpJf "${DISTDIR}/eclipse-build-${ECLIPSE_BUILD_VER}.tar.xz"
 	ln -s "${DISTDIR}/eclipse-${BUILD_VER}-src.tar.bz2" "${S}/eclipse-${BUILD_LABEL}-src.tar.bz2" || die
 
 	cd "${S}"
