@@ -4,12 +4,11 @@
 
 EAPI="3"
 
-inherit fdo-mime gnome2-utils git
+inherit fdo-mime gnome2-utils
 
 DESCRIPTION="GPL Electronic Design Automation: Printed Circuit Board editor"
 HOMEPAGE="http://www.gpleda.org/"
-EGIT_REPO_URI="git://git.gpleda.org/pcb.git"
-EGIT_BOOTSTRAP="./autogen.sh"
+SRC_URI="mirror://sourceforge/pcb/pcb/${P}/${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
