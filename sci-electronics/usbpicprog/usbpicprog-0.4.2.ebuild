@@ -10,8 +10,9 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
 IUSE=""
-RDEPEND="x11-libs/wxGTK
-         dev-libs/libusb"
+RDEPEND=">=x11-libs/wxGTK-2.9.1.1
+         dev-libs/libusb
+		 sys-fs/udev"
 DEPEND="${RDEPEND}"
 
 src_compile() {
@@ -20,6 +21,8 @@ src_compile() {
 }
 
 src_install() {
-    emake DESTDIR="${D}" install || die
+	emake DESTDIR="${D}" install || die "Install failed"
+	insinto /etc/udev/rules.d/
+	doins "${S}/26-microchip.rules"
 }
 
