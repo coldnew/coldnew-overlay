@@ -1,8 +1,0 @@
---- files/80cgc-opt.org	2009-03-06 19:14:40.000000000 +0100
-+++ files/80cgc-opt	2009-03-06 19:20:03.000000000 +0100
-@@ -3,4 +3,5 @@
- 
- # Make sure the helper files are found
- LDPATH="/opt/nvidia-cg-toolkit/lib"
-+LIBRARY_PATH="/opt/nvidia-cg-toolkit/lib"
- MANPATH="/opt/nvidia-cg-toolkit/man"
