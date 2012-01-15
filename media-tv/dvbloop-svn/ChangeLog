@@ -1,7 +1,0 @@
-# ChangeLog for media-tv/dvbloop-svn
-# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
-# $Header: $
-
-  09 Jan 2008; Sven Wegener <swegener@gentoo.org> +dvbloop-svn-0.ebuild:
-  Initial commit.
-
