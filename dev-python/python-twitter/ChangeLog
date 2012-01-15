@@ -1,8 +1,0 @@
-# ChangeLog for dev-python/python-twitter
-# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
-# $Header: $
-
-*python-twitter-0.5 (21 Feb 2009)
-
-  21 Feb 2009; Aaron Mavrinac <mavrinac@gmail.com> python-twitter-0.5.ebuild:
-  Initial import
