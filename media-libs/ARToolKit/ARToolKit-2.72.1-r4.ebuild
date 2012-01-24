@@ -15,20 +15,17 @@ KEYWORDS="amd64 x86"
 IUSE="debug jpeg gstreamer dv ieee1394 doc examples utils"
 #openVRML"
 RDEPEND=""
-DEPEND="virtual/glut
-	|| ( x11-drivers/nvidia-drivers 
+DEPEND=" || ( x11-drivers/nvidia-drivers  
 	     x11-drivers/xf86-video-intel  
-             x11-drivers/ati-drivers 
-             x11-drivers/xf86-video-radeonhd  
+             x11-drivers/ati-drivers  
              x11-drivers/xf86-video-ati )
-	jpeg? ( media-libs/jpeg )
+	jpeg? ( media-libs/libjpeg-turbo )
 	gstreamer? (
 	jpeg? ( media-plugins/gst-plugins-jpeg )
 	dv? ( media-plugins/gst-plugins-dv
 		media-plugins/gst-plugins-raw1394 )
 	ieee1394? ( media-plugins/gst-plugins-raw1394 )
-	!ieee1394? ( media-plugins/gst-plugins-v4l
-			media-plugins/gst-plugins-v4l2 )
+	!ieee1394? ( media-plugins/gst-plugins-v4l2 )
 	>media-libs/gstreamer-0.8
 	>media-libs/gst-plugins-base-0.8
 	)"
@@ -36,7 +33,7 @@ DEPEND="virtual/glut
 
 check_v4l() {
 	ebegin "Checking for V4L kernel Support"
-	linux_chkconfig_present VIDEO_V4L1_COMPAT && linux_chkconfig_present VIDEO_V4L2
+	linux_chkconfig_present VIDEO_V4L1_COMPAT || linux_chkconfig_present VIDEO_V4L2
 	eend $?
 	if [[ $? -ne 0 ]] ; then
 		eerror "no v4l support has been found"
