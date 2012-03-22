@@ -1,0 +1,42 @@
+--- PCL-1.4.0-Source.old/io/CMakeLists.txt	2012-01-01 20:39:42.000000000 -0500
++++ PCL-1.4.0-Source/io/CMakeLists.txt	2012-02-19 19:45:49.000000000 -0500
+@@ -58,7 +58,7 @@
+         include (${VTK_USE_FILE})
+         set(VTK_IO_INCLUDES include/pcl/${SUBSYS_NAME}/vtk_lib_io.h)
+         set(VTK_IO_SOURCE src/vtk_lib_io.cpp)
+-        set(VTK_IO_TARGET_LINK_LIBRARIES vtkCommon vtkWidgets)
++        set(VTK_IO_TARGET_LINK_LIBRARIES vtkCommon vtkWidgets vtkIO)
+     endif ()
+ 
+     set(srcs 
+--- PCL-1.4.0-Source.old/surface/CMakeLists.txt	2012-01-01 20:39:42.000000000 -0500
++++ PCL-1.4.0-Source/surface/CMakeLists.txt	2012-02-19 20:39:37.000000000 -0500
+@@ -37,7 +37,7 @@
+                                  src/vtk_smoothing/vtk_mesh_subdivision.cpp
+                                  src/vtk_smoothing/vtk_mesh_smoothing_laplacian.cpp
+                                  src/vtk_smoothing/vtk_mesh_smoothing_windowed_sinc.cpp)
+-        set(VTK_SMOOTHING_TARGET_LINK_LIBRARIES vtkCommon vtkWidgets)
++        set(VTK_SMOOTHING_TARGET_LINK_LIBRARIES vtkCommon vtkWidgets vtkGraphics)
+     endif()
+     
+     set(srcs 
+--- PCL-1.4.0-Source.old/tools/CMakeLists.txt	2012-01-01 20:39:42.000000000 -0500
++++ PCL-1.4.0-Source/tools/CMakeLists.txt	2012-02-19 21:33:40.000000000 -0500
+@@ -83,7 +83,7 @@
+       target_link_libraries(registration_visualizer pcl_common pcl_io pcl_kdtree pcl_filters pcl_registration pcl_visualization)
+ 
+       PCL_ADD_EXECUTABLE(octree_viewer ${SUBSYS_NAME} octree_viewer.cpp)
+-      target_link_libraries(octree_viewer pcl_common pcl_io pcl_octree pcl_visualization pcl_kdtree)   
++      target_link_libraries(octree_viewer pcl_common pcl_io pcl_octree pcl_visualization pcl_kdtree vtkGraphics vtkRendering)
+ 
+       PCL_ADD_EXECUTABLE(mesh2pcd ${SUBSYS_NAME} mesh2pcd.cpp)
+       target_link_libraries(mesh2pcd pcl_common pcl_io pcl_visualization pcl_filters vtkCommon)
+@@ -92,7 +92,7 @@
+       target_link_libraries(mesh_sampling pcl_common pcl_io pcl_visualization pcl_filters vtkCommon)
+       
+       PCL_ADD_EXECUTABLE(virtual_scanner ${SUBSYS_NAME} virtual_scanner.cpp)
+-      target_link_libraries(virtual_scanner pcl_common pcl_io pcl_filters pcl_visualization vtkCommon)
++      target_link_libraries(virtual_scanner pcl_common pcl_io pcl_filters pcl_visualization vtkCommon vtkGraphics)
+ 
+       if(BUILD_OPENNI AND OPENNI_FOUND)
+         PCL_ADD_EXECUTABLE(openni_save_image ${SUBSYS_NAME} openni_save_image.cpp)
