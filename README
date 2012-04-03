@@ -4,3 +4,8 @@ This overlay contains some experimental stuff, but mostly stuff I quickly wrote
 an ebuild for or grabed it from bugzilla and did not have the time to commit it
 to the official tree or do not consider it ready for it.
 
+INSTALL:
+
+use following command to add coldnew-overlay
+
+layman -f -o https://raw.github.com/coldnew/coldnew-overlay/master/coldnew-overlay.xml -a coldnew
