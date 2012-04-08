@@ -1,2 +1,0 @@
-#!/bin/bash
-dmd2.bin -L-L/usr/lib -I/usr/include/d -I/usr/include/phobos2 -I/usr/include/druntime $*

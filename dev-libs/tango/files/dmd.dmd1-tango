@@ -1,2 +1,0 @@
-#!/bin/bash
-dmd1.bin -I/usr/include/tango -L-L/usr/lib -L-ltango-user-dmd -I/usr/include/d -version=Tango -defaultlib=tango-base-dmd -debuglib=tango-base-dmd $*
