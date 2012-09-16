@@ -1,8 +1,0 @@
-# ChangeLog for sci-misc/swarm
-# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
-# $Header: $
-
-*swarm-2.2.3 (17 Oct 2008)
-
-  17 Oct 2008; Aaron Mavrinac <mavrinac@gmail.com> swarm-2.2.3.ebuild: 
-  Initial import
