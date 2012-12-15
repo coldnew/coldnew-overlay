@@ -15,3 +15,5 @@ INSTALL:
 
      layman -L
      layman -a coldnew
+
+After this you can emerge everything from this overlay.
