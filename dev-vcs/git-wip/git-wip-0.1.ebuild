@@ -19,14 +19,13 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 arm ~arm"
 IUSE=""
 
-RDEPEND=""
-
-src_prepare() { :; }
-
-src_compile() { :; }
+RDEPEND="dev-vcs/git"
 
 src_install() {
-	exeinto /usr/bin
+#	exeinto /usr/bin
+#	doexe git-wip || die "doexe failed"
+
+	exeinto /usr/libexec/git-core/
 	doexe git-wip || die "doexe failed"
 
 	dodoc README.markdown
