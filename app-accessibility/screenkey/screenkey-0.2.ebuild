@@ -9,7 +9,7 @@ inherit distutils
 DESCRIPTION="A screencast tool to display keys"
 HOMEPAGE="http://launchpad.net/screenkey"
 SRC_URI="http://launchpad.net/screenkey/0.2/0.2.0/+download/${P}.tar.gz"
-
+KEYWORDS="~x86 ~amd64 ~arm"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~x86"
