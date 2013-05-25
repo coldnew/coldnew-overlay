@@ -24,7 +24,6 @@ DEPEND=">=x11-libs/gtk+-2
 RDEPEND="${DEPEND}
 	chinese-sound? ( media-sound/vorbis-tools[ogg123] )"
 DEPEND="${DEPEND}
-	dev-util/pkgconfig
 	sys-devel/gettext"
 
 RESTRICT="mirror"
