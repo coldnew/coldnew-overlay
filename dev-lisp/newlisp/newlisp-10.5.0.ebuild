@@ -68,9 +68,9 @@ src_compile ()
 
 	# compile for arm
 	if [ "${ARCH}" == "arm" ]; then
- 	  # remove -m32
+	  # remove -m32
 	  sed -i 's/-m32//g' makefile_linux_utf8_ffi
-  	  sed -i 's/-m32//g' makefile_linux_utf8
+	  sed -i 's/-m32//g' makefile_linux_utf8
 
 	  if use libffi ; then
 		  make -f makefile_linux_utf8_ffi
