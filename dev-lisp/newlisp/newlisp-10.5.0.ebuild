@@ -46,7 +46,7 @@ src_configure ()
 
 src_compile ()
 {
-	cd "{S}"
+	cd "${S}"
 
 	# compile for x86
 	if [ "${ARCH}" == "x86" ]; then
@@ -69,8 +69,8 @@ src_compile ()
 	# compile for arm
 	if [ "${ARCH}" == "arm" ]; then
  	  # remove -m32
-	  sed -i makefile_linux_utf8_ffi 's/-m32//g'
-  	  sed -i makefile_linux_utf8 's/-m32//g'
+	  sed -i 's/-m32//g' makefile_linux_utf8_ffi
+  	  sed -i 's/-m32//g' makefile_linux_utf8
 
 	  if use libffi ; then
 		  make -f makefile_linux_utf8_ffi
