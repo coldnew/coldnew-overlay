@@ -26,48 +26,61 @@
 #   root# ln -s /usr/lib64/libffi-3.0.10/include/ffitarget.h /usr/include/
 #
 
-  EAPI="5"
-  DESCRIPTION="newLISP - a new generation of Lisp!"
-  HOMEPAGE="http://www.newlisp.org/"
-  SRC_URI="http://www.newlisp.org/downloads/${P}.tgz"
-  LICENSE="GPL-3"
-  IUSE="libffi unicode"
-  SLOT="0"
-  KEYWORDS="x86 amd64"
-  RDEPEND="sys-libs/readline
-		   app-admin/sudo
-		   libffi? ( dev-libs/libffi )"
-  DEPEND="${RDEPEND}"
+EAPI="5"
+DESCRIPTION="newLISP - a new generation of Lisp!"
+HOMEPAGE="http://www.newlisp.org/"
+SRC_URI="http://www.newlisp.org/downloads/${P}.tgz"
+LICENSE="GPL-3"
+IUSE="libffi unicode"
+SLOT="0"
+KEYWORDS="x86 amd64 ~arm"
+RDEPEND="sys-libs/readline
+  	   app-admin/sudo
+  	   libffi? ( dev-libs/libffi )"
+DEPEND="${RDEPEND}"
 
-  src_configure ()
-	{
-		return
-	}
+src_configure ()
+{
+	return
+}
 
-  src_compile ()
-	{
-	  if use libffi && use x86 && use unicode ; then
-		  make -f ${S}/makefile_linux_utf8_ffi
-	  elif use libffi && use amd64 && use unicode ; then
-		  make -f ${S}/makefile_linuxLP64_utf8_ffi
-	  elif ! use libffi && use x86 && use unicode ; then
-		  make -f ${S}/makefile_linux_utf8
-	  elif ! use libffi && use amd64 && use unicode ; then
-		  make -f ${S}/makefile_linuxLP64_utf8
-	  elif use libffi && use x86 && ! use unicode ; then
-		  make -f ${S}/makefile_linux_ffi
-	  elif use libffi && use amd64 && ! use unicode ; then
-		  make -f ${S}/makefile_linuxLP64_ffi
-	  elif ! use libffi && use x86 && ! use unicode ; then
-		  make -f ${S}/makefile_linux
-	  elif ! use libffi && use amd64 && ! use unicode ; then
-		  make -f ${S}/makefile_linuxLP64
+src_compile ()
+{
+	cd "{S}"
+
+	# compile for x86
+	if [ "${ARCH}" == "x86" ]; then
+	  if use libffi ; then
+		  make -f makefile_linux_utf8_ffi
 	  else
-		  ./configure-alt --prefix="/usr"
+		  make -f makefile_linux_utf8
 	  fi
-	}
+	fi
 
-  src_install()
-	{
+	# compile for amd64
+	if [ "${ARCH}" == "amd64" ]; then
+	  if use libffi ; then
+		  make -f makefile_linuxLP64_utf8_ffi
+	  else
+		  make -f makefile_linuxLP64_utf8
+	  fi
+	fi
+
+	# compile for arm
+	if [ "${ARCH}" == "arm" ]; then
+ 	  # remove -m32
+	  sed -i makefile_linux_utf8_ffi 's/-m32//g'
+  	  sed -i makefile_linux_utf8 's/-m32//g'
+
+	  if use libffi ; then
+		  make -f makefile_linux_utf8_ffi
+	  else
+		  make -f makefile_linux_utf8
+	  fi
+	fi
+}
+
+src_install()
+{
 	  sudo make install
-	}
+}
