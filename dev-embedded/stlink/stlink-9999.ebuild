@@ -7,8 +7,8 @@ EAPI=4
 inherit git-2 flag-o-matic
 
 DESCRIPTION="On board debugger driver for stm32-discovery boards"
-HOMEPAGE="https://github.com/burjui/stlink"
-EGIT_REPO_URI="git://github.com/burjui/stlink.git"
+HOMEPAGE="https://github.com/texane/stlink"
+EGIT_REPO_URI="https://github.com/texane/stlink.git"
 
 LICENSE="BSD"
 SLOT="0"
