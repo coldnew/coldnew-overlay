@@ -11,12 +11,12 @@ SLOT="0"
 KEYWORDS="~x86 ~amd64"
 IUSE=""
 RDEPEND=">=x11-libs/wxGTK-2.9.1.1
-         dev-libs/libusb
-		 sys-fs/udev"
+         dev-libs/libusbx
+	sys-fs/udev"
 DEPEND="${RDEPEND}"
 
 src_compile() {
-    econf 
+    econf
     emake || die
 }
 
@@ -25,4 +25,3 @@ src_install() {
 	insinto /etc/udev/rules.d/
 	doins "${S}/26-microchip.rules"
 }
-
