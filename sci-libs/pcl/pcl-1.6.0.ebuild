@@ -20,6 +20,7 @@ IUSE="cuda doc mpi +tools +vtk"
 RDEPEND="
 	>=dev-libs/boost-1.46
 	dev-cpp/eigen:3
+	<=dev-cpp/eigen-3.0.6
 	>=sci-libs/flann-1.7.1
 	>=media-libs/qhull-2010.1
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-4 )

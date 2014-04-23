@@ -1,33 +1,36 @@
---- PCL-1.4.0-Source.old/CMakeLists.txt	2012-01-01 20:39:43.000000000 -0500
-+++ PCL-1.4.0-Source/CMakeLists.txt	2012-02-20 19:37:03.000000000 -0500
-@@ -128,13 +128,17 @@
- # OpenMP
- include(${PCL_SOURCE_DIR}/cmake/pcl_openmp.cmake)
+diff -Naur PCL-1.6.0-Source.old/CMakeLists.txt PCL-1.6.0-Source/CMakeLists.txt
+--- PCL-1.6.0-Source.old/CMakeLists.txt	2012-07-17 19:11:32.000000000 -0400
++++ PCL-1.6.0-Source/CMakeLists.txt	2012-08-10 16:21:28.000000000 -0400
+@@ -185,7 +185,9 @@
+ find_package(FLANN 1.7.0 REQUIRED)
+ include_directories(SYSTEM ${FLANN_INCLUDE_DIRS})
  # OpenNI
 -find_package(OpenNI)
 +if(WITH_OPENNI)
 +  find_package(OpenNI)
 +endif()
  # Qhull
- find_package(Qhull)
- # Find ROS
- include(${PCL_SOURCE_DIR}/cmake/pcl_find_ros.cmake)
+ if(NOT PCL_SHARED_LIBS OR WIN32)
+   set(QHULL_USE_STATIC ON)
+@@ -199,7 +201,9 @@
+   include(${QT_USE_FILE})
+ endif (QT4_FOUND)
  # Find VTK
 -find_package(VTK)
 +if(WITH_VTK)
 +  find_package(VTK)
 +endif()
  if(VTK_FOUND)
-   set(VTK_FOUND TRUE)
-   message(STATUS "VTK found (include: ${VTK_INCLUDE_DIRS}, lib: ${VTK_LIBRARY_DIRS})")
-@@ -142,7 +146,9 @@
-   set(HAVE_VTK ON)
- endif()
- #Find MPI
+   if (PCL_SHARED_LIBS OR 
+       (NOT (PCL_SHARED_LIBS) AND NOT (VTK_BUILD_SHARED_LIBS)))
+@@ -216,7 +220,9 @@
+   endif ()
+ endif(VTK_FOUND)
+ # Find MPI
 -find_package(MPI)
 +if(WITH_MPI)
 +  find_package(MPI)
 +endif()
  if(MPI_CXX_FOUND)
-   include_directories(${MPI_INCLUDE_PATH})
+   include_directories(SYSTEM ${MPI_INCLUDE_PATH})
  endif(MPI_CXX_FOUND)
