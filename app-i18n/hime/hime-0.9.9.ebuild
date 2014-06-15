@@ -3,13 +3,12 @@
 # $Header: $
 
 EAPI="3"
-inherit eutils toolchain-funcs flag-o-matic git-2
+inherit eutils toolchain-funcs flag-o-matic
 
-DESCRIPTION="HIME Input Method Editor (coldnew's fork)"
+DESCRIPTION="HIME Input Method Editor"
 HOMEPAGE="http://hime.luna.com.tw/"
-#SRC_URI="https://github.com/downloads/caleb-/hime/${P/_/.}.tar.xz
-#	chinese-sound? ( http://www.csie.nctu.edu.tw/~cp76/hime/download/ogg.tgz )"
-EGIT_REPO_URI="git://github.com/coldnew/hime.git"
+SRC_URI="https://github.com/downloads/hime-ime/hime/${P/_/.}.tar.xz
+	chinese-sound? ( http://www.csie.nctu.edu.tw/~cp76/hime/download/ogg.tgz )"
 
 LICENSE="LGPL-2.1"
 SLOT="0"
@@ -20,10 +19,11 @@ DEPEND=">=x11-libs/gtk+-2
 	anthy? ( >=app-i18n/anthy-9100 )
 	chewing? ( dev-libs/libchewing )
 	gtk3? ( x11-libs/gtk+:3 )
-	qt4? ( dev-qt/qtcore:4 )"
+	qt4? ( dev-qt/qtcore:4 dev-qt/qtgui )"
 RDEPEND="${DEPEND}
 	chinese-sound? ( media-sound/vorbis-tools[ogg123] )"
 DEPEND="${DEPEND}
+	virtual/pkgconfig
 	sys-devel/gettext"
 
 RESTRICT="mirror"
@@ -31,7 +31,6 @@ S=${WORKDIR}/${P/_/.}
 
 src_prepare() {
 	echo "${P}" > ${S}/VERSION.hime
-#	epatch "${FILESDIR}/hime-0.9_moc_path_fix.patch"
 }
 
 src_configure() {
