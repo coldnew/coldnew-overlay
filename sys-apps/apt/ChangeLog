@@ -1,0 +1,21 @@
+# ChangeLog for sys-apps/apt
+# Copyright 1999-2013 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*apt-0.9.7.8 (15 Mar 2013)
+
+  15 Mar 2013; Patrick Lauer <patrick@gentoo.org> -apt-0.9.7.6.ebuild,
+  +apt-0.9.7.8.ebuild:
+  [sys-apps/apt] Bump
+
+  04 Dec 2012; Matthew Schultz (mschultz) <mattsch@gmail.com>
+  apt-0.9.7.6.ebuild:
+  Changed udev dependency to the new virtual udev dependency.
+
+*apt-0.9.7.6 (04 Dec 2012)
+
+  04 Dec 2012; Matthew Schultz (mschultz) <mattsch@gmail.com>
+  +apt-0.9.7.6.ebuild, +files/apt.lintian, +metadata.xml:
+  New Ebuild for bug #445990. Thanks for the review hasufell. We got apt, oh
+  crap. :-)
+
