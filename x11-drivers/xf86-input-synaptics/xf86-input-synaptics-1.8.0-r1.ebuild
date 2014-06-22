@@ -19,11 +19,13 @@ RDEPEND="kernel_linux? ( >=dev-libs/libevdev-0.4 )
 DEPEND="${RDEPEND}
 	>=sys-kernel/linux-headers-2.6.37
 	>=x11-proto/inputproto-2.1.99.3
-	>=x11-proto/recordproto-1.14"
+	>=x11-proto/recordproto-1.14
+	sys-devel/automake:1.13"
 
 DOCS=( "README" )
 
 src_prepare() {
+        epatch ${FILESDIR}/add_synclient_-m_options.patch || die
         epatch ${FILESDIR}/five_fingers_support.patch || die
 }
 
