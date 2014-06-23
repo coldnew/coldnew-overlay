@@ -34,6 +34,9 @@ src_install() {
     doins etc/X11/xorg.conf.d/20-intel.conf
     doins etc/X11/xorg.conf.d/50-synaptics.conf
 
+    # Install sbin command
+    dosbin boot-update
+
     # Install files to /usr/share/macbookair-2013/
     dodir $TARGET_DIR_NAME
 
