@@ -2,10 +2,10 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=0
+EAPI=5
 
 # project is hosted on github.com, so git-2 is needed (git is deprecated)
-inherit git-2 systemd
+inherit eutils git-2 systemd
 
 DESCRIPTION="My Macbook Air 2013 configs for Gentoo Linux."
 HOMEPAGE="http://github.com/coldnew/macbookair-2013-config"
@@ -41,8 +41,8 @@ src_install() {
     doins kernel-config.example
     doins fstab.example
 
-    execinto $TARGET_DIR_NAME
-    doexec local-service
+    exeinto $TARGET_DIR_NAME
+    doexe local-service
 
     # Install systemd stuff
     systemd_dounit etc/systemd/system/my-stuff.service
