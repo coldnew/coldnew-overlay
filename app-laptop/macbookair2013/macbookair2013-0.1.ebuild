@@ -43,6 +43,7 @@ src_install() {
     insinto $TARGET_DIR_NAME
     doins kernel-config.example
     doins fstab.example
+    doins grub.example
 
     exeinto $TARGET_DIR_NAME
     doexe local-service
