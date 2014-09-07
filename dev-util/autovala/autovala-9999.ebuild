@@ -15,7 +15,8 @@ SLOT="0"
 KEYWORDS="~arm ~x86 ~amd64"
 IUSE=""
 
-RDEPEND="dev-util/cmake"
+RDEPEND="dev-util/cmake
+        app-text/pandoc"
 
 DEPEND="${RDEPEND}
         >=dev-lang/vala-0.18.1"
