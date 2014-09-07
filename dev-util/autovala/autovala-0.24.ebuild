@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=4
+EAPI=5
 
 inherit eutils git-2 cmake-utils
 
@@ -21,3 +21,9 @@ RDEPEND="dev-util/cmake
 
 DEPEND="${RDEPEND}
         >=dev-lang/vala-0.18.1"
+
+# FIXME: I can't get it why cmake-utils_src_make will failed here.
+src_compile() {
+    cd ${S}_build
+    make
+}
