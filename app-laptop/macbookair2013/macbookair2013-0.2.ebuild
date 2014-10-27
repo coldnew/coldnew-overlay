@@ -31,7 +31,6 @@ src_install() {
     # Install xofg configs
     dodir /etc/X11/xorg.conf.d
     insinto /etc/X11/xorg.conf.d
-    doins etc/X11/xorg.conf.d/20-intel.conf
     doins etc/X11/xorg.conf.d/50-synaptics.conf
 
     # Install sbin command
