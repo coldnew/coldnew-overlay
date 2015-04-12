@@ -6,10 +6,8 @@ to the official tree or do not consider it ready for it.
 
 INSTALL :
 
-  Edit /etc/layman/layman.cfg and add this (second line):
+    sudo wget https://raw.github.com/coldnew/coldnew-overlay/master/coldnew-overlay.xml -O /etc/layman/overlays
 
-     overlays  : http://www.gentoo.org/proj/en/overlays/repositories.xml
-                 https://raw.github.com/coldnew/coldnew-overlay/master/coldnew-overlay.xml
   Then:
 
      layman -L
