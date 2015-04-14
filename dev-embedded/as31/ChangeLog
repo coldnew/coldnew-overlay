@@ -1,8 +1,0 @@
-# ChangeLog for dev-embedded/as31
-# Copyright 1999-2008 Gentoo Foundation; Distributed under the GPL v2
-# $Header: $
-
-*as31-2.0_beta3 (08 Oct 2008)
-
-  08 Oct 2008; Aaron Mavrinac <mavrinac@gmail.com> as31-2.0_beta3.ebuild: 
-  Initial import
