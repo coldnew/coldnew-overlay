@@ -6,7 +6,7 @@ to the official tree or do not consider it ready for it.
 
 INSTALL :
 
-    sudo wget https://raw.github.com/coldnew/coldnew-overlay/master/coldnew-overlay.xml -O /etc/layman/overlays
+    sudo wget https://raw.github.com/coldnew/coldnew-overlay/master/coldnew-overlay.xml -O /etc/layman/overlays/coldnew-overlay.xml
 
   Then:
 
