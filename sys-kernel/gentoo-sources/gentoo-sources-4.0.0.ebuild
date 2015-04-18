@@ -18,7 +18,7 @@ IUSE="deblob experimental"
 DESCRIPTION="Full sources including the Gentoo patchset for the ${KV_MAJOR}.${KV_MINOR} kernel tree"
 SRC_URI="${KERNEL_URI} ${GENPATCHES_URI} ${ARCH_URI}"
 
-UNIPATCH_LIST="${DISTDIR}/revert-acpi_support_osi_darwin.patch"
+UNIPATCH_LIST="${FILESDIR}/revert-acpi_support_osi_darwin.patch"
 UNIPATCH_STRICTORDER=1
 
 pkg_postinst() {
