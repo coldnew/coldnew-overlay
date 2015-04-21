@@ -1,0 +1,25 @@
+Index: linux/drivers/hid/hid-apple.c
+===================================================================
+--- linux.orig/drivers/hid/hid-apple.c
++++ linux/drivers/hid/hid-apple.c
+@@ -542,6 +542,8 @@ static const struct hid_device_id apple_
+ 		.driver_data = APPLE_HAS_FN | APPLE_RDESC_JIS },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING8_ANSI),
+ 		.driver_data = APPLE_HAS_FN },
++        { HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING7A_NEW),
++	        .driver_data = APPLE_HAS_FN },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING8_ISO),
+ 		.driver_data = APPLE_HAS_FN | APPLE_ISO_KEYBOARD },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING8_JIS),
+Index: linux/drivers/hid/hid-ids.h
+===================================================================
+--- linux.orig/drivers/hid/hid-ids.h
++++ linux/drivers/hid/hid-ids.h
+@@ -79,6 +79,7 @@
+ #define USB_DEVICE_ID_APPLE_GEYSER_ANSI	0x0214
+ #define USB_DEVICE_ID_APPLE_GEYSER_ISO	0x0215
+ #define USB_DEVICE_ID_APPLE_GEYSER_JIS	0x0216
++#define USB_DEVICE_ID_APPLE_WELLSPRING7A_NEW   0x0273
+ #define USB_DEVICE_ID_APPLE_GEYSER3_ANSI	0x0217
+ #define USB_DEVICE_ID_APPLE_GEYSER3_ISO	0x0218
+ #define USB_DEVICE_ID_APPLE_GEYSER3_JIS	0x0219
