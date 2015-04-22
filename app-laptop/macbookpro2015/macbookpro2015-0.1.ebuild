@@ -7,24 +7,22 @@ EAPI=5
 # project is hosted on github.com, so git-2 is needed (git is deprecated)
 inherit eutils git-2 systemd
 
-DESCRIPTION="My Macbook Air 2013 configs for Gentoo Linux."
-HOMEPAGE="http://github.com/coldnew/macbookair-2013-config"
+DESCRIPTION="coldnew's MacbookPro Retina Early 2015 configs for Gentoo Linux."
+HOMEPAGE="http://github.com/coldnew/macbookpro-2015-config"
 
-EGIT_REPO_URI="git://github.com/coldnew/macbookair-2013-config.git"
+EGIT_REPO_URI="https://github.com/coldnew/macbookpro-2015-config.git"
 
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
 DEPEND="
-	net-wireless/broadcom-sta
 "
 RDEPEND="${DEPEND}"
 
 IUSE="systemd"
 
-
-TARGET_DIR_NAME="/usr/share/macbookair-2013"
+TARGET_DIR_NAME="/usr/share/macbookpro2015"
 
 src_install() {
 
@@ -39,10 +37,10 @@ src_install() {
     # Install files to /usr/share/macbookair-2013/
     dodir $TARGET_DIR_NAME
 
-    insinto $TARGET_DIR_NAME
-    doins kernel-config.example
-    doins fstab.example
-    doins grub.example
+#    insinto $TARGET_DIR_NAME
+#    doins kernel-config.example
+#    doins fstab.example
+#    doins grub.example
 
     exeinto $TARGET_DIR_NAME
     doexe local-service
@@ -55,5 +53,5 @@ src_install() {
 }
 
 pkf_postinst() {
-    elog "Install my Macbookair 2013 configs finish."
+    elog "Install coldnew's MacbookPro Retina Early 2015 configs finish."
 }
