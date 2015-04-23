@@ -17,6 +17,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
 DEPEND="
+sys-fs/diskdev_cmds
 "
 RDEPEND="${DEPEND}"
 
