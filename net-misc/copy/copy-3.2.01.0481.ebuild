@@ -13,7 +13,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
-DEPEND="dev-qt/qtcore:4"
+DEPEND=""
 RDEPEND="${DEPEND}"
 
 src_unpack(){
