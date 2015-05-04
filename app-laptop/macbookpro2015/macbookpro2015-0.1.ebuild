@@ -51,6 +51,10 @@ src_install() {
 
     # start systemd
     systemd_enable_service multiuser.target my-stuff.service
+
+    #
+    insinto /usr/lib/sysctl.d/60-myself.conf
+    doins usr/lib/sysctl.d/60-myself.conf
 }
 
 pkf_postinst() {
