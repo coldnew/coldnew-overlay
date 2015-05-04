@@ -53,7 +53,7 @@ src_install() {
     systemd_enable_service multiuser.target my-stuff.service
 
     #
-    insinto /usr/lib/sysctl.d/60-myself.conf
+    insinto /usr/lib/sysctl.d
     doins usr/lib/sysctl.d/60-myself.conf
 }
 
