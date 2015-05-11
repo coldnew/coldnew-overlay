@@ -50,7 +50,7 @@ DEPEND="app-arch/unzip
 
 RDEPEND="!!app-emulation/virtualbox
 	!app-emulation/virtualbox-additions
-	~app-emulation/virtualbox-modules-${MAIN_PV}
+	~app-emulation/virtualbox-modules-${MAIN_PV}_beta3
 	!headless? (
 		x11-libs/libXcursor
 		media-libs/libsdl[X]
