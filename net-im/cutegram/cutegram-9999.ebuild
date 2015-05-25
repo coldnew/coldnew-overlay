@@ -29,7 +29,7 @@ DEPEND="dev-libs/openssl
 	dev-qt/qtsvg:5
 	dev-qt/qtxml:5
 	dev-qt/qtwidgets:5
-	net-im/libqtelegram"
+	net-im/libqtelegram-ae"
 
 src_configure() {
 	eqmake5
