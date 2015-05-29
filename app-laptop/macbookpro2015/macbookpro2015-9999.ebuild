@@ -57,7 +57,7 @@ src_install() {
     doins usr/lib/sysctl.d/60-myself.conf
 
 	insinto /etc/modprobe.d
-	doins etc/modprobe.d/hid_layout.conf
+	doins etc/modprobe.d/hid_apple.conf
 }
 
 pkf_postinst() {
