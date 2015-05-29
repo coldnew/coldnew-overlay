@@ -55,6 +55,9 @@ src_install() {
     #
     insinto /usr/lib/sysctl.d
     doins usr/lib/sysctl.d/60-myself.conf
+
+	insinto /etc/modprobe.d
+	doins etc/modprobe.d/hid_layout.conf
 }
 
 pkf_postinst() {
