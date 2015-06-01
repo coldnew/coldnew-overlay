@@ -12,11 +12,13 @@ HOMEPAGE="https://github.com/editorconfig/editorconfig-core-c"
 
 EGIT_REPO_URI="https://github.com/editorconfig/editorconfig-core-c.git"
 
+EGIT_COMMIT="v0.12.0"
+
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="amd64 x86"
 
-DEPEND="dev-libs/libpcre"
+DEPEND="dev-libs/libpcre:3"
 RDEPEND="${DEPEND}"
 
 IUSE=""
