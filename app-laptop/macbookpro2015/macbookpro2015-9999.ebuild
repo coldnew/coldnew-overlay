@@ -23,7 +23,7 @@ RDEPEND="${DEPEND}"
 
 IUSE="systemd"
 
-TARGET_DIR_NAME="/usr/share/macbookpro2015"
+TARGET_DIR_NAME="/usr/share/macbookpro-2015"
 
 src_install() {
 
