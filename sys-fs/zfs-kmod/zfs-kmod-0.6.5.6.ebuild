@@ -1,5 +1,6 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
+# $Id$
 
 EAPI="4"
 
@@ -11,14 +12,12 @@ inherit flag-o-matic linux-info linux-mod toolchain-funcs autotools-utils
 
 if [ ${PV} == "9999" ] ; then
 	inherit git-2
-	MY_PV=9999
 	EGIT_REPO_URI="https://github.com/zfsonlinux/zfs.git"
 else
 	inherit eutils versionator
-	MY_PV=$(replace_version_separator 3 '-')
-	SRC_URI="https://github.com/zfsonlinux/zfs/archive/zfs-${MY_PV}.tar.gz"
-	S="${WORKDIR}/zfs-zfs-${MY_PV}"
-	KEYWORDS="amd64"
+	SRC_URI="https://github.com/zfsonlinux/zfs/archive/zfs-${PV}.tar.gz"
+	S="${WORKDIR}/zfs-${PV}"
+	KEYWORDS="~amd64 ~arm ~ppc ~ppc64"
 fi
 
 DESCRIPTION="Linux ZFS kernel module for sys-fs/zfs"
@@ -47,7 +46,6 @@ pkg_setup() {
 		IOSCHED_NOOP
 		MODULES
 		!PAX_KERNEXEC_PLUGIN_METHOD_OR
-		!PAX_RANDKSTACK
 		!PAX_USERCOPY_SLABS
 		ZLIB_DEFLATE
 		ZLIB_INFLATE
@@ -65,10 +63,10 @@ pkg_setup() {
 			DEVTMPFS
 	"
 
-	kernel_is ge 2 6 26 || die "Linux 2.6.26 or newer required"
+	kernel_is ge 2 6 32 || die "Linux 2.6.32 or newer required"
 
 	[ ${PV} != "9999" ] && \
-		{ kernel_is le 4 0 || die "Linux 4.0 is the latest supported version."; }
+		{ kernel_is le 4 5 || die "Linux 4.5 is the latest supported version."; }
 
 	check_extra_config
 }
@@ -128,10 +126,22 @@ pkg_postinst() {
 		ewarn "at least 256M and decreasing zfs_arc_max to some value less than that."
 	fi
 
-	ewarn "This version of ZFSOnLinux includes support for features flags."
-	ewarn "If you upgrade your pools to make use of feature flags, you will lose"
-	ewarn "the ability to import them using older versions of ZFSOnLinux."
-	ewarn "Any new pools will be created with feature flag support and will"
-	ewarn "not be compatible with older versions of ZFSOnLinux. To create a new"
-	ewarn "pool that is backward compatible, use zpool create -o version=28 ..."
+	ewarn "This version of ZFSOnLinux includes support for new feature flags"
+	ewarn "that are incompatible with previous versions. GRUB2 support for"
+	ewarn "/boot with the new feature flags is not yet available."
+	ewarn "Do *NOT* upgrade root pools to use the new feature flags."
+	ewarn "Any new pools will be created with the new feature flags by default"
+	ewarn "and will not be compatible with older versions of ZFSOnLinux. To"
+	ewarn "create a newpool that is backward compatible wih GRUB2, use "
+	ewarn
+	ewarn "zpool create -d -o feature@async_destroy=enabled "
+	ewarn "	-o feature@empty_bpobj=enabled -o feature@lz4_compress=enabled"
+	ewarn "	-o feature@spacemap_histogram=enabled"
+	ewarn "	-o feature@enabled_txg=enabled "
+	ewarn "	-o feature@extensible_dataset=enabled -o feature@bookmarks=enabled"
+	ewarn "	..."
+	ewarn
+	ewarn "GRUB2 support will be updated as soon as either the GRUB2"
+	ewarn "developers do a tag or the Gentoo developers find time to backport"
+	ewarn "support from GRUB2 HEAD."
 }
