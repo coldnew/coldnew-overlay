@@ -7,8 +7,8 @@ EAPI=5
 DESCRIPTION="Prebuild version of slic3r, a G-code generator for 3D printers"
 HOMEPAGE="http://slic3r.org"
 SRC_URI="
-	amd64?	( http://dl.slic3r.org/linux/slic3r-linux-x86_64-1-1-7-stable.tar.gz )
-	x86?	( http://dl.slic3r.org/linux/slic3r-linux-x86-1-1-7-stable.tar.gz )"
+	amd64?	( http://dl.slic3r.org/linux/old/slic3r-linux-x86_64-1-1-7-stable.tar.gz )
+	x86?	( http://dl.slic3r.org/linux/old/slic3r-linux-x86-1-1-7-stable.tar.gz )"
 
 RESTRICT="mirror"
 LICENSE="GPL-3"
