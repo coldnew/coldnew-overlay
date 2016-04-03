@@ -24,19 +24,22 @@ src_compile() {
     emake || die
 }
 
+src_test() {
+    emake selftest || die
+    ./zerotier-selftest || die
+}
+
 src_install() {
     # Install to /var/lib/zerotier-one
-    dodir /var/lib/zerotier-one
-    insinto /var/lib/zerotier-one
-    doins zerotier-one
+    exeinto /var/lib/zerotier-one
+    doexe zerotier-one
+
+    dobin zerotier-cli
+    dobin zerotier-idtool
 
     # Install systemd stuff
     systemd_dounit ext/installfiles/linux/systemd/zerotier-one.service
 
     # start systemd unit
     systemd_enable_service multiuser.target zerotier-one.service
-
-    # symlink
-    dosym /var/lib/zerotier-one/zerotier /usr/bin/zerotier-cli || die
-    dosym /var/lib/zerotier-one/zerotier /usr/bin/zerotier-idtool || die
 }
