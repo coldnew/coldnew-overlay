@@ -44,13 +44,13 @@ src_install() {
 #    doins grub.example
 
     exeinto $TARGET_DIR_NAME
-    doexe local-service
+    doexe mbpr2015-service
 
     # Install systemd stuff
-    systemd_dounit etc/systemd/system/my-stuff.service
+    systemd_dounit etc/systemd/system/mbpr2015-config.service
 
     # start systemd
-    systemd_enable_service multiuser.target my-stuff.service
+    systemd_enable_service multiuser.target mbpr2015-config.service
 
     #
     insinto /usr/lib/sysctl.d
