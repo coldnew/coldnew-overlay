@@ -58,6 +58,11 @@ src_install() {
 
 	insinto /etc/modprobe.d
 	doins etc/modprobe.d/hid_apple.conf
+
+	# Initial some environment variables setting	
+	insinto /etc/profile.d
+	doins etc/profile.d/qt-hidpi.sh
+
 }
 
 pkf_postinst() {
