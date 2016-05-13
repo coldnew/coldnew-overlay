@@ -1,3 +1,4 @@
 ~net-im/cutegram-9999
 ~net-im/libtelegram-9999
 ~media-libs/thumbnailer-9999
+=dev-java/oracle-jdk-bin-1.9.0.116
