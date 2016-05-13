@@ -19,11 +19,16 @@ IUSE=""
 
 RDEPEND="net-libs/gtk-vnc[${PYTHON_USEDEP}]
   dev-python/pygobject[${PYTHON_USEDEP}]
-  >=net-misc/tightvnc-1.3.10"
+  >=net-misc/tightvnc-1.3.10[server]"
 DEPEND="${RDEPEND}"
 
 src_prepare() {
-    :
+    cat << EOF >vncdesk/font_path.py
+font_path = ','.join(['/usr/share/fonts/misc/',
+                      '/usr/share/fonts/75dpi/',
+                      '/usr/share/fonts/100dpi/',
+                      '/usr/share/fonts/Type1/'])
+EOF
 }
 
 python_compile_all() {
