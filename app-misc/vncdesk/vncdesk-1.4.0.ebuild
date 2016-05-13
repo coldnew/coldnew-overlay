@@ -18,7 +18,8 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 RDEPEND="net-libs/gtk-vnc[${PYTHON_USEDEP}]
-  dev-python/pygobject[${PYTHON_USEDEP}]"
+  dev-python/pygobject[${PYTHON_USEDEP}]
+  >=net-misc/tightvnc-1.3.10"
 DEPEND="${RDEPEND}"
 
 src_prepare() {
