@@ -2,13 +2,15 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="4"
+EAPI="5"
 
-inherit flag-o-matic eutils multilib autotools googlecode
+inherit flag-o-matic eutils multilib autotools git-2 autotools
 
 DESCRIPTION="PCMan is an easy-to-use telnet client mainly targets BBS users formerly writen by gtk2"
-HOMEPAGE="http://pcmanx-gtk2.googlecode.com"
-SRC_URI="http://pcmanx-gtk2.googlecode.com/files/${P}.tar.xz"
+HOMEPAGE="https://github.com/pcman-bbs/pcmanx"
+EGIT_REPO_URI="https://github.com/pcman-bbs/pcmanx.git"
+
+EGIT_COMMIT="40db5a8e615f9596dcb98fb62cc88215780615e1"
 
 KEYWORDS="amd64 ppc x86"
 SLOT="0"
@@ -34,10 +36,9 @@ DEPEND="${COMMON_DEPEND}
 
 RESTRICT="mirror"
 
-#src_prepare() {
-#	(has_version ">=net-libs/xulrunner-1.9" && use nsplugin ) && \
-#		epatch "${FILESDIR}/${PN}-0.3.8-xulrunner.patch"
-#}
+src_prepare() {
+	sh autogen.sh || die "autogen"	
+}
 
 src_configure() {
 	# better move this to pkg_setup phase?
@@ -50,11 +51,3 @@ src_configure() {
 		$(use_enable iplookup)
 }
 
-#src_install(){
-#	emake DESTDIR="${D}" install || die "emake failed"
-#	if use nsplugin
-#	then
-#		insinto /usr/$(get_libdir)/nsbrowser/plugins
-#		doins plugin/src/pcmanx-plugin.so || die "failed to install firefox plugin"
-#	fi
-#}
