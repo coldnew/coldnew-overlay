@@ -7,7 +7,7 @@ EAPI=5
 RESTRICT="test" # needs some pointy sticks. Seriously.
 PYTHON_COMPAT=(python{2_7,3_3,3_4,3_5})
 
-inherit distutils-r1 eutils
+inherit distutils-r1 eutils python-r1
 DESCRIPTION=" Run applications in VNC desktops. Use for scaling on HiDPI displays. "
 HOMEPAGE="https://github.com/feklee/vncdesk"
 SRC_URI="https://github.com/feklee/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
@@ -19,7 +19,7 @@ IUSE=""
 
 RDEPEND="net-libs/gtk-vnc[${PYTHON_USEDEP}]
   dev-python/pygobject[${PYTHON_USEDEP}]
-  >=net-misc/tightvnc-1.3.10[server]"
+  =net-misc/tigervnc-1.4.2-r2[server,-xorgmodule]"
 DEPEND="${RDEPEND}"
 
 src_prepare() {
