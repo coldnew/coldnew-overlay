@@ -23,7 +23,7 @@ fi
 #http://www.java.net/download/java/jdk9/archive/116/binaries/jdk-9-ea+116_linux-x64_bin.tar.gz
 #MY_PV="$(get_version_component_range 2)${MY_PV_EXT}"
 
-MY_PV="9-ea+116"
+MY_PV="9-ea+118"
 
 AT_amd64="jdk-${MY_PV}_linux-x64_bin.tar.gz"
 AT_x86="jdk-${MY_PV}_linux-x86_bin.tar.gz"
