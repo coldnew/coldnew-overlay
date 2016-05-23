@@ -37,14 +37,17 @@ DEPEND="${COMMON_DEPEND}
 RESTRICT="mirror"
 
 src_prepare() {
-	sh autogen.sh || die "autogen"	
-}
+	[[ ! -e ChangeLog && -e ./build/changelog.sh ]] && \
+		./build/changelog.sh > ChangeLog
+	intltoolize --copy --force --automake || die "intltoolize failed"
+	eautoreconf
 
-src_configure() {
 	# better move this to pkg_setup phase?
 	# this flag crashes CTermData::memset16()
 	filter-flags -ftree-vectorize
+}
 
+src_configure() {
 	econf $(use_enable proxy) \
 		$(use_enable libnotify) \
 		$(use_enable wget)\
