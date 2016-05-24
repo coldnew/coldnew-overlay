@@ -5,7 +5,7 @@
 EAPI=5
 
 RESTRICT="test" # needs some pointy sticks. Seriously.
-PYTHON_COMPAT=(python{2_7,3_3,3_4,3_5})
+PYTHON_COMPAT=(python{3_3,3_4,3_5})
 
 inherit distutils-r1 eutils python-r1
 DESCRIPTION=" Run applications in VNC desktops. Use for scaling on HiDPI displays. "
