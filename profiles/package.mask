@@ -3,3 +3,4 @@
 ~media-libs/thumbnailer-9999
 =dev-java/oracle-jdk-bin-1.9.0.116
 ~dev-embedded/stlink-9999
+~media-fonts/firacode-9999
