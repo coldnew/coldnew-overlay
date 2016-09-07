@@ -8,7 +8,7 @@ inherit eutils  unpacker
 
 DESCRIPTION="Skype for Linux WebRTC Alpha"
 HOMEPAGE="http://www.skype.com/"
-SRC_URI="https://repo.skype.com/deb/pool/main/s/skypeforlinux/skypeforlinux_${PV}.0_amd64.deb"
+SRC_URI="https://repo.skype.com/deb/pool/main/s/skypeforlinux/skypeforlinux_${PV}.3_amd64.deb"
 
 LICENSE="no-source-code"
 SLOT="0"
