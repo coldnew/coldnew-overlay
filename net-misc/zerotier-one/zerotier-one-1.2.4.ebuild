@@ -14,7 +14,7 @@ LICENSE="GPL-3"
 EGIT_REPO_URI="https://github.com/zerotier/ZeroTierOne.git"
 EGIT_BRANCH="master"
 
-EGIT_COMMIT="9cc2733ed877faed30154035f0efe95633e88ac2"
+EGIT_COMMIT="fe5257df81c4ec4b5d48f707eb794de0748b7ac0"
 
 SLOT="0"
 KEYWORDS="x86 amd64 ~x86 ~amd64 ~arm"
@@ -40,7 +40,8 @@ src_install() {
     dobin zerotier-idtool
 
     # Install systemd stuff
-    systemd_dounit ext/installfiles/linux/systemd/zerotier-one.service
+    #systemd_dounit ext/installfiles/linux/systemd/zerotier-one.service
+    systemd_dounit  "${FILESDIR}"/zerotier-one.service
 
     # start systemd unit
     systemd_enable_service multiuser.target zerotier-one.service
