@@ -15,8 +15,9 @@ INSTALLDIR="/opt/${PN/-bin/}"
 
 DESCRIPTION="J-Link gdb-server and commander for Segger J-Link jtag adapter"
 HOMEPAGE="http://www.segger.com/jlink-software.html"
-SRC_URI="amd64? ( jlink_${PV}_x86_64.deb )
-				 x86? ( jlink_${PV}_i386.deb )"
+SRC_URI="amd64? ( JLink_Linux_V${PV/./}_x86_64.deb )
+				 x86? ( JLink_Linux_V${PV/./}_i386.deb )"
+
 LICENSE="J-Link Terms of Use"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
@@ -36,7 +37,7 @@ pkg_nofetch() {
 		einfo
 		einfo "Please download the files from Segger's jlink download archive:"
 		einfo
-		einfo "   https://www.segger.com/downloads/jlink/jlink_${PV}_${MY_ARCH}.deb"
+		einfo "   https://www.segger.com/downloads/jlink/JLink_Linux_V${PV/./}_${MY_ARCH}.deb"
 		einfo ""
 }
 
