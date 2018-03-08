@@ -1,0 +1,64 @@
+--- dart/build/toolchain/linux/BUILD.gn.orig
++++ dart/build/toolchain/linux/BUILD.gn
+@@ -10,6 +10,7 @@
+ 
+ declare_args() {
+   toolchain_prefix = ""
++  llvm_prefix = ""
+   # TODO(zra): Add an argument for overriding the host toolchain.
+ }
+ 
+@@ -63,15 +64,13 @@
+ }
+ 
+ gcc_toolchain("clang_x86") {
+-  prefix = rebase_path("//buildtools/toolchain/clang+llvm-x86_64-linux/bin",
+-                       root_build_dir)
+-  cc = "${compiler_prefix}${prefix}/clang"
+-  cxx = "${compiler_prefix}${prefix}/clang++"
++  cc = "${llvm_prefix}/bin/clang"
++  cxx = "${llvm_prefix}/bin/clang++"
+   readelf = "readelf"
+-  nm = "${prefix}/llvm-nm"
+-  ar = "${prefix}/llvm-ar"
++  nm = "${llvm_prefix}/bin/llvm-nm"
++  ar = "${llvm_prefix}/bin/llvm-ar"
+   ld = cxx
+-  strip = "${prefix}/strip"
++  strip = "strip"
+ 
+   toolchain_cpu = "x86"
+   toolchain_os = "linux"
+@@ -95,16 +94,14 @@
+ }
+ 
+ gcc_toolchain("clang_x64") {
+-  prefix = rebase_path("//buildtools/toolchain/clang+llvm-x86_64-linux/bin",
+-                       root_build_dir)
+-  cc = "${compiler_prefix}${prefix}/clang"
+-  cxx = "${compiler_prefix}${prefix}/clang++"
++  cc = "${llvm_prefix}/bin/clang"
++  cxx = "${llvm_prefix}/bin/clang++"
+ 
+   readelf = "readelf"
+-  nm = "${prefix}/llvm-nm"
+-  ar = "${prefix}/llvm-ar"
++  nm = "${llvm_prefix}/bin/llvm-nm"
++  ar = "${llvm_prefix}/bin/llvm-ar"
+   ld = cxx
+-  strip = "${prefix}/strip"
++  strip = "strip"
+ 
+   toolchain_cpu = "x64"
+   toolchain_os = "linux"
+--- dart/third_party/tcmalloc/BUILD.gn.orig
++++ dart/third_party/tcmalloc/BUILD.gn
+@@ -44,6 +44,7 @@
+     # profilers will not initialize properly on startup.
+     "-Wl,-uIsHeapProfilerRunning,-uProfilerStart",
+   ]
++  libs = [ "unwind" ]
+ }
+ 
+ source_set("dynamic_annotations") {
+
