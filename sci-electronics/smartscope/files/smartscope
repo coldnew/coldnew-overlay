@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+SCRIPT=`basename $0`
+
+if [ $SCRIPT = "smartscope" ]; then
+  mono /opt/smartscope/SmartScope.exe
+elif [ $SCRIPT = "smartscopeserver" ]; then
+  mono /opt/smartscope/SmartScopeServer.exe
+elif [ $SCRIPT = "smartscopeserverui" ]; then 
+  mono /opt/smartscope/SmartScopeServerUI.exe
+else
+  echo Unknown target $SCRIPT
+fi
+
