@@ -1,0 +1,14 @@
+diff --git a/libs/parser/hconf.gperf b/libs/parser/hconf.gperf
+index e5f0af7..da4eb8b 100644
+--- a/libs/parser/hconf.gperf
++++ b/libs/parser/hconf.gperf
+@@ -9,7 +9,8 @@
+ 
+ struct kconf_id;
+ 
+-static const struct kconf_id *kconf_id_lookup(register const char *str, register GPERF_LEN_TYPE len);
++static const struct kconf_id *kconf_id_lookup(register const char *str, register size_t len);
++
+ 
+ %%
+ mainmenu,	T_MAINMENU,	TF_COMMAND

@@ -1,0 +1,13 @@
+diff --git a/configure b/configure
+index 0ad376f..625a240 100755
+--- a/configure
++++ b/configure
+@@ -17900,7 +17900,7 @@ return setupterm ();
+   return 0;
+ }
+ _ACEOF
+-for ac_lib in '' tinfo; do
++for ac_lib in '' tinfow; do
+   if test -z "$ac_lib"; then
+     ac_res="none required"
+   else
