@@ -7,10 +7,11 @@ EAPI=5
 inherit eutils git-2 cmake-utils
 
 DESCRIPTION="A program that automatically generates CMake configuration files for your Vala project"
-HOMEPAGE="https://github.com/rastersoft/autovala/wiki"
-EGIT_REPO_URI="https://github.com/rastersoft/autovala.git"
+HOMEPAGE="https://gitlab.com/rastersoft/autovala"
+EGIT_REPO_URI="https://gitlab.com/rastersoft/autovala.git"
 
-LICENSE="GPL-2"
+
+LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~arm ~x86 ~amd64"
 IUSE=""
