@@ -11,7 +11,7 @@ fi
 inherit eutils ${SCM}
 
 DESCRIPTION="Project IceStorm - Lattice iCE40 FPGAs Bitstream Documentaion (Reverse Engineered)"
-HOMEPAGE="https://github.com/cliffordwolf/icestorm"
+HOMEPAGE="http://www.clifford.at/icestorm/"
 
 if [[ ${PV} == *9999 ]] ; then
     SRC_URI=""
@@ -26,7 +26,10 @@ SLOT="0"
 IUSE=""
 REQUIRED_USE=""
 
-RDEPEND="dev-libs/boost"
+RDEPEND="dev-libs/boost
+	 dev-embedded/libftdi
+	 media-gfx/graphviz
+	 dev-lang/tcl"
 DEPEND="${RDEPEND}"
 
 src_compile() {
