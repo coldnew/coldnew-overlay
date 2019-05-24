@@ -26,8 +26,10 @@ QA_PREBUILT="opt/icestudio/icestudio"
 
 src_install()
 {
-    install /opt
     insinto /opt/icestudio
     insopts -m 0755
     doins -r ${S}/* || die "doins /opt failed"
+
+    dodir /opt/bin
+    dosym ../icestudio/icestudio /opt/bin/icestudio || die "dosym /opt/bin/icestudio"
 }
