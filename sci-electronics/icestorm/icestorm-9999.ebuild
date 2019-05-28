@@ -29,7 +29,7 @@ REQUIRED_USE=""
 RDEPEND="dev-libs/boost
 	 dev-embedded/libftdi
 	 media-gfx/graphviz
-	 sci-electonics/iverilog
+	 sci-electronics/iverilog
 	 dev-lang/tcl"
 DEPEND="${RDEPEND}"
 
