@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python{3_4,3_5} )
 inherit eutils python-any-r1
 
 DESCRIPTION="Yosys - Yosys Open SYnthesis Suite"
-HOMEPAGE="http://www.clifford.at/icestorm/"
+HOMEPAGE="http://www.clifford.at/yosys"
 LICENSE="ISC"
 SRC_URI="https://github.com/cliffordwolf/${PN}/archive/${P}.tar.gz"
 

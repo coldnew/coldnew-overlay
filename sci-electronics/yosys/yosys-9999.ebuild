@@ -7,7 +7,7 @@ EAPI="5"
 inherit eutils git-r3 multilib eutils
 
 DESCRIPTION="Yosys - Yosys Open SYnthesis Suite"
-HOMEPAGE="http://www.clifford.at/icestorm/"
+HOMEPAGE="http://www.clifford.at/yosys"
 LICENSE="ISC"
 EGIT_REPO_URI="https://github.com/cliffordwolf/yosys.git"
 
