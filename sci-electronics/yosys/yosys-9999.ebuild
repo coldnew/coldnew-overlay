@@ -1,39 +1,65 @@
-# Copyright 1999-2015 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Id$
+EAPI=5
 
-EAPI="5"
+inherit eutils
 
-inherit eutils git-r3 multilib eutils
+if [[ ${PV} = *9999* ]]; then
+	EGIT_REPO_URI="git://github.com/cliffordwolf/yosys.git"
+	inherit git-2
+	SRC_URI=""
+	KEYWORDS=""
+else
+	SRC_URI="https://github.com/cliffordwolf/yosys/archive/${P}.tar.gz"
+	S="${WORKDIR}/${PN}-${P}"
+	KEYWORDS="~ppc ~arm64"
+fi
 
-DESCRIPTION="Yosys - Yosys Open SYnthesis Suite"
-HOMEPAGE="http://www.clifford.at/yosys"
 LICENSE="ISC"
-EGIT_REPO_URI="https://github.com/cliffordwolf/yosys.git"
-
 SLOT="0"
-KEYWORDS=""
-IUSE=""
+IUSE="tcl +abc plugins readline clang"
 
-RDEPEND="
-	sys-libs/readline
-	virtual/libffi
-	dev-vcs/git
-	dev-lang/tcl
-	dev-vcs/mercurial"
+RDEPEND="tcl? ( dev-lang/tcl )
+	 plugins? ( virtual/libffi virtual/pkgconfig )
+	 readline? ( sys-libs/readline )"
+DEPEND="abc? ( dev-vcs/git )
+	clang? ( sys-devel/clang )
+	sys-devel/flex sys-devel/bison sys-devel/make
+	$RDEPEND"
 
-DEPEND="
-	sys-devel/bison
-	sys-devel/flex
-	>=dev-lang/python-3
-	sys-apps/gawk
-	virtual/pkgconfig
-	${RDEPEND}"
-
-src_prepare() {
-	epatch "${FILESDIR}"/${P}-path-fix.patch
+src_unpack() {
+	if [[ ${PV} = *9999* ]]; then
+		git-2_src_unpack
+	else
+		default_src_unpack
+	fi
+	if use abc; then
+		cd ${S} || die
+		local ABCURL=$(sed -ne '/^ABCURL/s/^.*=//p;T;q' < Makefile)
+		local ABCREV=$(sed -ne '/^ABCREV/s/^.*=//p;T;q' < Makefile)
+		git clone ${ABCURL} abc || die
+		cd abc || die
+		ABCREV=${ABCREV//[[:space:]]}
+		git config --local core.abbrev ${#ABCREV} || die
+		git checkout ${ABCREV} || die
+	fi
 }
 
 src_configure() {
-	emake config-gcc
+	(
+		echo "CONFIG := `usex clang clang gcc`"
+		echo "ENABLE_TCL := `usex tcl 1 0`"
+		echo "ENABLE_ABC := `usex abc 1 0`"
+		echo "ENABLE_PLUGINS := `usex plugins 1 0`"
+		echo "ENABLE_READLINE := `usex readline 1 0`"
+		if ! has_version sys-apps/gawk ; then
+			echo "PRETTY := 0"
+		fi
+	) > Makefile.conf
+}
+
+src_compile() {
+	emake PREFIX="/usr" || die "emake failed"
+}
+
+src_install() {
+	emake PREFIX="/usr" DESTDIR="${D}" install
 }
