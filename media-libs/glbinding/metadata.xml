@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="project">
+    <name>CG Internals</name>
+    <email>opensource@cginternals.com</email>
+  </maintainer>
+
+  <longdescription lang="en">
+  glbinding leverages modern C++11 features like enum classes, lambdas, and variadic templates, instead of relying on macros; all OpenGL symbols are real functions and variables. It provides type-safe parameters, per feature API header, lazy function resolution, multi-context and multi-thread support, global and local function callbacks, meta information about the generated OpenGL binding and the OpenGL runtime, as well as tools and examples for quick-starting your projects. Based on the OpenGL API specification (gl.xml) glbinding is generated using python scripts and templates that can be easily adapted to fit custom needs.
+  </longdescription>
+
+  <use>
+     <flag name="boost">Use boost::thread instead of std::thread</flag>
+     <flag name="cppcheck">Enables source code check targets</flag>
+     <flag name="doc">Build doxygen documentation</flag>
+     <flag name="examples">Build and install examples</flag>
+     <flag name="tests">Build and run unit tests</flag>
+     <flag name="tools">Build and install auxiliary tools</flag>
+  </use>
+</pkgmetadata>

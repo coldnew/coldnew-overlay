@@ -1,0 +1,31 @@
+From ced5addd4cf2a18f1ee2223103ba1d7d8f9ca068 Mon Sep 17 00:00:00 2001
+From: lordgeorg <lordgeorg@protonmail.com>
+Date: Sun, 5 May 2019 21:29:39 +0200
+Subject: [PATCH] Sets version to 9999
+
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 45f9981f..4e686e32 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -55,11 +55,11 @@ set(META_PROJECT_DESCRIPTION "A C++ binding for the OpenGL API, generated using
+ set(META_AUTHOR_ORGANIZATION "CG Internals GmbH")
+ set(META_AUTHOR_DOMAIN       "https://github.com/cginternals/glbinding/")
+ set(META_AUTHOR_MAINTAINER   "opensource@cginternals.com")
+-set(META_VERSION_MAJOR       "3")
+-set(META_VERSION_MINOR       "1")
++set(META_VERSION_MAJOR       "9999")
++set(META_VERSION_MINOR       "0")
+ set(META_VERSION_PATCH       "0")
+ set(META_VERSION_REVISION    "${GIT_REV}")
+-set(META_VERSION             "${META_VERSION_MAJOR}.${META_VERSION_MINOR}.${META_VERSION_PATCH}")
++set(META_VERSION             "9999")
+ set(META_NAME_VERSION        "${META_PROJECT_NAME} v${META_VERSION} (${META_VERSION_REVISION})")
+ set(META_CMAKE_INIT_SHA      "c472829f01df4c99c7bd3fa96bcf6854b3dd44f1")
+ 
+-- 
+2.21.0
+
