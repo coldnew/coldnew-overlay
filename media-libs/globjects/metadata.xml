@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="project">
+    <name>CG Internals</name>
+    <email>opensource@cginternals.com</email>
+  </maintainer>
+
+  <longdescription lang="en">
+globjects provides object-oriented interfaces to the OpenGL API (3.0 and higher). It reduces the amount of OpenGL code required for rendering and facilitates coherent OpenGL use by means of an additional abstraction layer to glbinding and GLM. Common rendering tasks and processes are automated and missing features of specific OpenGL drivers are partially simulated or even emulated at run-time.  
+  </longdescription>
+
+  <use>
+     <flag name="doc">Build doxygen documentation</flag>
+     <flag name="examples">Build and install examples</flag>
+     <flag name="glfw">Use glfw-based examples if flag examples is also set</flag>
+     <flag name="qt5">Use qt5-based examples if flag examples is also set</flag>
+     <flag name="tests">Build and run unit tests</flag>
+  </use>
+</pkgmetadata>
