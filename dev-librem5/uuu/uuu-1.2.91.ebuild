@@ -9,7 +9,7 @@ if [[ ${PV} == *9999 ]] ; then
     EGIT_REPO_URI="https://source.puri.sm/Librem5/mfgtools"
 fi
 
-inherit eutils ${SCM} cmake-utils
+inherit eutils ${SCM} cmake-utils udev
 
 DESCRIPTION="This is a copy of the Freescale/NXP I.MX Chip image deploy tools for librem-5."
 HOMEPAGE="https://arm01.puri.sm/job/debs/job/deb-mfgtools-buster-amd64/"
@@ -40,3 +40,15 @@ if [[ ${PV} != *9999 ]] ; then
       cmake-utils_src_prepare
   }
 fi
+
+src_install() {
+    # systemd stuff
+    udev_newrules "${FILESDIR}/99_librem5_devkit.rules" 99_librem5_devkit.rules
+    cmake-utils_src_install
+}
+
+pkg_postinst() {
+    enewgroup plugdev
+    elog "To be able to access the librem5's uuu command, you have to be"
+    elog "a member of the 'plugdev' group."
+}
