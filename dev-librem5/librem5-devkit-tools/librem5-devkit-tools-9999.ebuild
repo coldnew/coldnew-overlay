@@ -12,7 +12,7 @@ fi
 inherit eutils ${SCM}
 
 DESCRIPTION="Tools for the Librem5-evk (devkit)"
-HOMEPAGE="https://arm01.puri.sm/job/debs/job/deb-mfgtools-buster-amd64/"
+HOMEPAGE="https://source.puri.sm/Librem5/librem5-devkit-tools"
 
 
 if [[ ${PV} == *9999 ]] ; then
