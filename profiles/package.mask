@@ -6,6 +6,6 @@
 ~media-fonts/firacode-9999
 ~dev-util/autovala-9999
 ~dev-util/ccls-9999
-
+~sci-electronics/yosys-9999
 # Alread merge to portage
 net-im/telegram-bin
