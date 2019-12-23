@@ -1,0 +1,28 @@
+diff --git a/cmake/linux_package.cmake b/cmake/linux_package.cmake
+index 345c02a9..98596353 100644
+--- a/cmake/linux_package.cmake
++++ b/cmake/linux_package.cmake
+@@ -1,11 +1,6 @@
+ 
+ function(InstallQtModule module qtversion)
+ 	get_filename_component(realpath $ENV{Qt5_DIR}/lib/libQt5${module}.so.${qtversion} REALPATH)
+-	INSTALL(FILES
+-		${realpath}
+-		DESTINATION Sourcetrail/lib
+-		RENAME libQt5${module}.so.${qtversion}
+-	)
+ endfunction(InstallQtModule)
+ 
+ function(GetAndInstallLibrary libraryName withoutVersion)
+@@ -98,11 +93,6 @@ function(AddSharedToComponent)
+ 	GetAndInstallLibrary(libssl.so 1)
+ 	GetAndInstallLibrary(libcrypto.so 1)
+ 
+-	INSTALL(DIRECTORY
+-		$ENV{Qt5_DIR}/plugins/platforms
+-		DESTINATION Sourcetrail/lib
+-	)
+-
+ 	INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/bin/app/user
+ 		DESTINATION Sourcetrail
+ 		PATTERN "log/*" EXCLUDE
