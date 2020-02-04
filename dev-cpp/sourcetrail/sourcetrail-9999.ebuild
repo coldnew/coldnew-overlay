@@ -2,15 +2,15 @@ EAPI=7
 
 inherit eutils cmake-utils
 
+HOMEPAGE="https://github.com/CoatiSoftware/Sourcetrail"
 if [[ ${PV} = *9999* ]]; then
 	EGIT_REPO_URI="https://github.com/CoatiSoftware/Sourcetrail.git"
 	inherit git-r3
-	SRC_URI="https://github.com/CoatiSoftware/Sourcetrail"
 	KEYWORDS="~x86 ~amd64"
-#else
-#	SRC_URI="https://github.com/CoatiSoftware/Sourcetrail/archive/${P}.tar.gz"
-#	S="${WORKDIR}/${PN}-${P}"
-#	KEYWORDS="~x86 ~amd64"
+else
+	SRC_URI="https://github.com/CoatiSoftware/Sourcetrail/archive/${P}.tar.gz"
+	S="${WORKDIR}/${PN}-${P}"
+	KEYWORDS="~x86 ~amd64"
 fi
 
 LICENSE="Sourcetrail || ( GPL-2 GPL-3 LGPL-3 ) BSD"
