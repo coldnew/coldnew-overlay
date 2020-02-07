@@ -20,7 +20,9 @@ RDEPEND="dev-util/cmake
         app-text/pandoc"
 
 DEPEND="${RDEPEND}
-        >=dev-lang/vala-0.18.1"
+        >=dev-lang/vala-0.18.1
+	>=dev-libs/libgee-0.8
+"
 
 # FIXME: I can't get it why cmake-utils_src_make will failed here.
 src_compile() {
