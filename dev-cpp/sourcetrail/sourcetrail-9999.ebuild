@@ -40,6 +40,7 @@ RDEPEND="
 	selinux? ( sys-libs/libselinux )
 	>=dev-libs/boost-1.68
 	>=dev-qt/qtgui-5.12.0
+	dev-qt/qtprintsupport
 	cxx? ( sys-devel/llvm )
 	java? (
 	      dev-java/maven-bin
