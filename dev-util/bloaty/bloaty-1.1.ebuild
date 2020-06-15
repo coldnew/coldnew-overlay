@@ -21,3 +21,12 @@ DEPEND="
 "
 RDEPEND="${DEPEND}"
 
+
+src_configure() {
+    # NOTE:
+    # hack for https://github.com/google/bloaty/issues/199
+    local mycmakeargs=(
+	-DBUILD_SHARED_LIBS=OFF
+    )
+    cmake-utils_src_configure
+}
