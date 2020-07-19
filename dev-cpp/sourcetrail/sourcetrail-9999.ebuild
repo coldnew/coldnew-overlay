@@ -65,6 +65,7 @@ src_unpack() {
 src_prepare() {
     # apply patches
     eapply "${FILESDIR}"/0001-fix-linux-make-install.patch
+    eapply "${FILESDIR}"/0002-fix-gentoo-clang-header.patch
 
     cmake-utils_src_prepare
 }
