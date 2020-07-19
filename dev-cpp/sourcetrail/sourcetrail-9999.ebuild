@@ -64,7 +64,7 @@ src_unpack() {
 
 src_prepare() {
     # apply patches
-    eapply "${FILESDIR}"/0001-fix-gentoo-build-on-portage.patch
+    eapply "${FILESDIR}"/0001-fix-linux-make-install.patch
 
     cmake-utils_src_prepare
 }
@@ -85,5 +85,5 @@ src_install() {
     # install by cmake
     cmake-utils_src_install
     # generate symlink
-    dosym "/usr/Sourcetrail/Sourcetrail.sh" "/usr/bin/sourcetrail"
+    dosym "/usr/Sourcetrail/Sourcetrail" "/usr/bin/sourcetrail"
 }
