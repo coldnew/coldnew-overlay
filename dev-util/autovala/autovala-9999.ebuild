@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=5
+EAPI=7
 
-inherit eutils git-2 cmake-utils
+inherit eutils git-r3 cmake-utils
 
 DESCRIPTION="A program that automatically generates CMake configuration files for your Vala project"
 HOMEPAGE="https://gitlab.com/rastersoft/autovala"

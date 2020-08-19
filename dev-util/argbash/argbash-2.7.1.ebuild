@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=5
+EAPI=7
 EGIT_REPO_URI="https://github.com/matejak/argbash.git"
 EGIT_COMMIT="${PV}"
 DESCRIPTION="Bash argument parsing code generator"
@@ -13,7 +13,7 @@ LICENSE="BSD-3"
 IUSE=""
 DEPEND="app-shells/bash"
 
-inherit eutils git-2
+inherit eutils git-r3
 
 src_install() {
     cd "${WORKDIR}/${PN}-${PV}/resources"
