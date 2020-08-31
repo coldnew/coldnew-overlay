@@ -9,9 +9,16 @@ case ${ARCH} in
     amd64) MY_ARCH="linux64" ;;
 esac
 
+# when this pkg not official release, toggle this flag
+IS_DEV=0
+
+if [ ${IS_DEV} -eq 1 ]; then
+   MY_ARCH="dev-${MY_ARCH}"
+fi
+
 DESCRIPTION="Visual editor for open FPGA boards"
 HOMEPAGE="https://github.com/FPGAwars/icestudio"
-SRC_URI="https://github.com/FPGAwars/icestudio/releases/download/v${PV}/icestudio-${PV}-${MY_ARCH}.zip -> ${P}.${MY_ARCH}.zip"
+SRC_URI="https://github.com/FPGAwars/icestudio/releases/download/v${PV}/icestudio-${PV}-${MY_ARCH}.zip -> ${P}-${MY_ARCH}.zip"
 
 LICENSE="GPL-2"
 SLOT="0"
