@@ -12,7 +12,7 @@ SRC_URI="https://github.com/YosysHQ/$PN/archive/$GIT_COMMIT.tar.gz -> $P.tar.gz
 	 https://github.com/YosysHQ/abc/archive/$ABC_GIT_COMMIT.tar.gz -> abc-$ABC_GIT_COMMIT.tar.gz"
 LICENSE=ISC
 SLOT=0
-KEYWORDS=
+KEYWORDS=~amd64
 
 #PATCHES="$FILESDIR/$PN-0.10-makefile-fix.patch"
 
