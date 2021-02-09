@@ -1,0 +1,10 @@
+--- a/src/Mod/Image/Gui/OpenGLImageBox.cpp.orig	2020-11-07 17:56:49.544867513 +0100
++++ b/src/Mod/Image/Gui/OpenGLImageBox.cpp	2020-11-07 17:56:57.712943589 +0100
+@@ -26,6 +26,7 @@
+ # include <QSurfaceFormat>
+ # include <QMessageBox>
+ # include <QPainter>
++# include <QPainterPath>
+ #endif
+ 
+ #if defined(__MINGW32__)

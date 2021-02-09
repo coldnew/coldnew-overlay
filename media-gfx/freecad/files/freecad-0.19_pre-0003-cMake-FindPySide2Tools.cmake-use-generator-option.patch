@@ -1,0 +1,20 @@
+--- a/cMake/FindPySide2Tools.cmake.orig	2020-11-07 22:34:01.271764302 +0100
++++ b/cMake/FindPySide2Tools.cmake	2020-11-07 22:35:30.834251371 +0100
+@@ -41,7 +41,7 @@
+         # pyside2-uic generates in comments at beginning., which is why
+         # we follow the tool command with in-place sed.
+         ADD_CUSTOM_COMMAND(OUTPUT ${outfile}
+-          COMMAND "${PYSIDE2UICBINARY}" "${infile}" -o "${outfile}"
++          COMMAND "${PYSIDE2UICBINARY}" -g "python" "${infile}" -o "${outfile}"
+           COMMAND sed -i "/^# /d" "${outfile}"
+           MAIN_DEPENDENCY "${infile}"
+         )
+@@ -68,7 +68,7 @@
+         # pyside-rcc generates in comments at beginning, which is why
+         # we follow the tool command with in-place sed.
+         ADD_CUSTOM_COMMAND(OUTPUT "${outfile}"
+-          COMMAND "${PYSIDE2RCCBINARY}" "${infile}" ${PY_ATTRIBUTE} -o "${outfile}"
++          COMMAND "${PYSIDE2RCCBINARY}" -g "python" "${infile}" ${PY_ATTRIBUTE} -o "${outfile}"
+           COMMAND sed -i "/^# /d" "${outfile}"
+           MAIN_DEPENDENCY "${infile}"
+         )

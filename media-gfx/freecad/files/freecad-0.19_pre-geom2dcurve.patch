@@ -1,0 +1,11 @@
+--- a/src/Mod/TechDraw/App/DrawDimHelper.h	2019-11-03 19:01:27.000000000 +0100
++++ b/src/Mod/TechDraw/App/DrawDimHelper.h.new	2020-11-07 17:27:52.331952485 +0100
+@@ -23,7 +23,7 @@
+ #ifndef _DrawDimHelper_h_
+ #define _DrawDimHelper_h_
+ 
+-#include <Standard_Handle.hxx>
++#include <Geom2d_Curve.hxx>
+ 
+ #include <string>
+ #include <Base/Vector3D.h>

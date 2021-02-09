@@ -1,0 +1,13 @@
+--- a/cMake/FindOpenCasCade.cmake	2020-11-08 20:14:23.920856536 +0100
++++ b/cMake/FindOpenCasCade.cmake	2020-11-08 20:14:08.602787374 +0100
+@@ -81,7 +81,9 @@
+       )
+     endif(WIN32)
+     if(OCC_LIBRARY)
+-      GET_FILENAME_COMPONENT(OCC_LIBRARY_DIR ${OCC_LIBRARY} PATH)
++      IF(NOT OCC_LIBRARY_DIR)
++        GET_FILENAME_COMPONENT(OCC_LIBRARY_DIR ${OCC_LIBRARY} PATH)
++      ENDIF()
+       IF(NOT OCC_INCLUDE_DIR)
+         FIND_PATH(OCC_INCLUDE_DIR Standard_Version.hxx
+           ${OCC_LIBRARY_DIR}/../inc

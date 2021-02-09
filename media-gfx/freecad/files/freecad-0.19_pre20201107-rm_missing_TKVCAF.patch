@@ -1,0 +1,10 @@
+--- a/cMake/FindOpenCasCade.cmake.orig	2020-11-08 14:27:14.490456637 +0100
++++ b/cMake/FindOpenCasCade.cmake	2020-11-08 14:27:30.632297343 +0100
+@@ -146,7 +146,6 @@
+     TKCAF
+     TKXCAF
+     TKLCAF
+-    TKVCAF
+     TKCDF
+     TKXDESTEP
+     TKXDEIGES

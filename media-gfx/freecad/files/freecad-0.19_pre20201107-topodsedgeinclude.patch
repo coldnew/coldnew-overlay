@@ -1,0 +1,10 @@
+--- a/src/Mod/Part/App/BRepOffsetAPI_MakeFillingPyImp.cpp.orig	2020-11-08 00:28:33.654353748 +0100
++++ b/src/Mod/Part/App/BRepOffsetAPI_MakeFillingPyImp.cpp	2020-11-08 00:28:58.525495874 +0100
+@@ -35,6 +35,7 @@
+ #include "TopoShapeEdgePy.h"
+ #include "TopoShapeFacePy.h"
+ #include <Base/VectorPy.h>
++# include <TopoDS_Edge.hxx>
+ 
+ using namespace Part;
+ /*!
