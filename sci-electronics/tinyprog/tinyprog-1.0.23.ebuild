@@ -1,6 +1,6 @@
-EAPI=6
+EAPI=7
 
-PYTHON_COMPAT=( python2_7 python3_{4,5,6} )
+PYTHON_COMPAT=( python3_{4,5,6,7,8,9} )
 inherit distutils-r1
 
 GIT_COMMIT=0b70c51b8a3fa6b4b2ce4f8d31435ec80d0c8a3f
