@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit eutils cmake
+inherit eutils cmake git-r3 desktop xdg-utils
 
 HOMEPAGE="https://github.com/CoatiSoftware/Sourcetrail"
 DESCRIPTION="A cross-platform source explorer for C/C++ and Java"
@@ -85,6 +85,42 @@ src_configure() {
 src_install() {
     # install by cmake
     cmake_src_install
+
+    cd "${D}"
+    # This removes the rpath entries with $$ORIGIN
+    # since they trigger warnings when merging
+    for f in "usr/share/Sourcetrail/Sourcetrail" "usr/share/Sourcetrail/sourcetrail_indexer"; do
+	rpath=$(patchelf --print-rpath "${f}" 2>/dev/null)
+	new_rpath=${rpath//\$\$ORIGIN\/lib\/:/}
+	patchelf --set-rpath "${new_rpath}" "${f}" || die
+    done
     # generate symlink
     dosym "/usr/share/Sourcetrail/Sourcetrail" "/usr/bin/sourcetrail"
+    # generate icon
+    local size
+    for size in 48 64 128 256 512; do
+	newicon -s "${size}" "usr/share/Sourcetrail/data/gui/icon/logo_1024_1024.png" \
+		"sourcetrail.png"
+    done
+    # generate desktop file
+    sed -i -e 's/Utilities;//' "usr/share/Sourcetrail/setup/share/applications/sourcetrail.desktop" \
+	"usr/share/Sourcetrail/setup/share/applications/sourcetrail.desktop" || die
+    domenu "usr/share/Sourcetrail/setup/share/applications/sourcetrail.desktop" || die
+
+    # install mime
+    insinto /usr/share/mime/packages
+    doins usr/share/Sourcetrail/setup/share/mime/packages/sourcetrail-mime.xml || die
 }
+
+pkg_postinst() {
+	xdg_icon_cache_update
+	xdg_mimeinfo_database_update
+	xdg_desktop_database_update
+}
+
+pkg_postrm() {
+	xdg_icon_cache_update
+	xdg_mimeinfo_database_update
+	xdg_desktop_database_update
+}
+
