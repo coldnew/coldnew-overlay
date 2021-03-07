@@ -3,19 +3,12 @@
 
 EAPI=7
 
-inherit eutils cmake
+inherit eutils cmake git-r3
 
 HOMEPAGE="https://github.com/CoatiSoftware/Sourcetrail"
-DESCRIPTION="A cross-platform source explorer for C/C++ and Java"
-if [[ ${PV} = *9999* ]]; then
-    EGIT_REPO_URI="https://github.com/CoatiSoftware/Sourcetrail.git"
-    inherit git-r3
-    KEYWORDS="~x86 ~amd64"
-else
-    SRC_URI="https://github.com/CoatiSoftware/Sourcetrail/archive/${PV}.tar.gz"
-    S="${WORKDIR}/Sourcetrail-${PV}"
-    KEYWORDS="~x86 ~amd64"
-fi
+EGIT_REPO_URI="https://github.com/CoatiSoftware/Sourcetrail.git"
+KEYWORDS="~x86 ~amd64"
+EGIT_COMMIT="27262d20b436a9210ed80e41ce364dcb1e7c55c9"
 
 LICENSE="Sourcetrail || ( GPL-2 GPL-3 LGPL-3 ) BSD"
 SLOT="0"
@@ -63,11 +56,7 @@ PATCHES=(
 )
 
 src_unpack() {
-    if [[ ${PV} = *9999* ]]; then
-        git-r3_src_unpack
-    else
-        default_src_unpack
-    fi
+   git-r3_src_unpack
 }
 
 src_configure() {
