@@ -72,7 +72,7 @@ src_install() {
     cat << EOF >imhex.sh
 #!/bin/bash
 export SETTINGS_FOLDER=$HOME/.local/share/imhex
-mkdir -p $SETTINGS_FOLDER
+mkdir -p ${SETTINGS_FOLDER} > /dev/null 2>&1
 cd $SETTINGS_FOLDER
 export LD_LIBRARY_PATH=/usr/share/imhex
 exec /usr/share/imhex/imhex "$@"
