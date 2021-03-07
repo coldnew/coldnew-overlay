@@ -35,10 +35,53 @@ BDEPEND="${DEPEND}"
 
 CMAKE_BUILD_TYPE="Release"
 
-src_prepare() {
-	# apply patches
-	eapply "${FILESDIR}"/0001-fix-installation-dir-on-linux.patch
+#PATCHES=(
+#    "${FILESDIR}"/0001-fix-installation-dir-on-linux.patch
+#)
 
-	cmake_src_prepare
+# FIXME: this ebuild doen't support multilib
+# The tools in /usr/lib/go should not cause the multilib-strict check to fail.
+# QA_MULTILIB_PATHS="usr/lib/.*"
+
+src_configure() {
+    local mycmakeargs=(
+        -DBUILD_SHARED_LIBS=OFF
+    )
+    cmake_src_configure
 }
 
+src_install() {
+    # install by cmake
+    cmake_src_install
+
+    cd "${D}"
+
+    # move imhex binary to /usr/share/imhex/imhex
+    insinto /usr/share/imhex
+    insopts -m 0755
+    doins usr/bin/imhex || die "doins usr/bin failed"
+    rm usr/bin/imhex
+
+    # move libimhex.so to  /usr/share/imhex/libimhex.so 
+    insinto /usr/share/imhex
+    insopts -m 0755
+    doins usr/lib/libimhex.so || die "doins usr/lib failed"
+    rm usr/lib/libimhex.so
+
+    # generate wrapper for /usr/bin/imhex
+    cat << EOF >imhex.sh
+#!/bin/bash
+export SETTINGS_FOLDER=$HOME/.local/share/imhex
+mkdir -p $SETTINGS_FOLDER
+cd $SETTINGS_FOLDER
+export LD_LIBRARY_PATH=/usr/share/imhex
+exec /usr/share/imhex/imhex "$@"
+EOF
+    insinto /usr/share/imhex
+    insopts -m 0755
+    doins imhex.sh  || die "doins usr/share/imhex/imhex.sh failed"
+    rm -f imhex.sh
+    
+    # generate symlink
+    dosym "/usr/share/imhex/imhex.sh" "/usr/bin/imhex"
+}
