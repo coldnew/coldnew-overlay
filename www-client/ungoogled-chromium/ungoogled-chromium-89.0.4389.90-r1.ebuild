@@ -14,7 +14,7 @@ inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-util
 UGC_PVR="${PVR/r}"
 UGC_PF="${PN}-${UGC_PVR}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
-# UGC_COMMIT_ID="a9140d5b6fdf0dc308c385bc69668be8f85deb4c"
+#UGC_COMMIT_ID="64cbcbcfee33fd56760173b3a17d2de52cd77258"
 
 if [ -z "$UGC_COMMIT_ID" ]
 then
@@ -27,7 +27,7 @@ fi
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium"
-PATCHSET="3"
+PATCHSET="7"
 PATCHSET_NAME="chromium-$(ver_cut 1)-patchset-${PATCHSET}"
 SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV}.tar.xz
 	https://files.pythonhosted.org/packages/ed/7b/bbf89ca71e722b7f9464ebffe4b5ee20a9e5c9a555a56e2d3914bb9119a6/setuptools-44.1.0.zip
@@ -36,8 +36,8 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE="cfi +clang closure-compile convert-dict cups custom-cflags enable-driver hangouts headless kerberos +official optimize-thinlto optimize-webui pgo +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent system-libvpx +system-openh264 system-openjpeg +system-re2 +tcmalloc thinlto vaapi vdpau wayland widevine"
+KEYWORDS="amd64 ~x86"
+IUSE="cfi +clang closure-compile convert-dict cups custom-cflags enable-driver hangouts headless kerberos +official optimize-thinlto optimize-webui pgo +proprietary-codecs pulseaudio screencast selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent system-libvpx +system-openh264 system-openjpeg +system-re2 +tcmalloc thinlto vaapi vdpau wayland widevine"
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
@@ -117,6 +117,7 @@ COMMON_DEPEND="
 		wayland? (
 			dev-libs/wayland:=
 			dev-libs/libffi:=
+			screencast? ( media-video/pipewire:0/0.3 )
 			x11-libs/gtk+:3[wayland,X]
 			x11-libs/libdrm:=
 			x11-libs/libxkbcommon:=
@@ -139,7 +140,6 @@ RDEPEND="${COMMON_DEPEND}
 	virtual/ttf-fonts
 	selinux? ( sec-policy/selinux-chromium )
 	tcmalloc? ( !<x11-drivers/nvidia-drivers-331.20 )
-	!x86? ( widevine? ( ~www-plugins/chrome-binary-plugins-${PV} ) )
 	!www-client/chromium
 	!www-client/chromium-bin
 	!www-client/ungoogled-chromium-bin
@@ -162,8 +162,7 @@ BDEPEND="
 	sys-devel/flex
 	virtual/pkgconfig
 	closure-compile? ( virtual/jre )
-	clang? ( sys-devel/clang )
-	thinlto? ( sys-devel/lld )
+	clang? ( sys-devel/clang sys-devel/lld )
 	cfi? ( sys-devel/clang-runtime[sanitize] )
 "
 
@@ -227,13 +226,6 @@ pkg_pretend() {
 		ewarn "Consider disabling this USE flag if something breaks"
 		ewarn
 	fi
-	if use system-libvpx; then
-		ewarn
-		ewarn "Chromium is notorious of relying upon the newest libvpx"
-		ewarn "that is absent from Gentoo, which might result in build failure"
-		ewarn "Consider disabling this USE flag if something breaks"
-		ewarn
-	fi
 	if has_version "sys-libs/libcxx"; then
 		ewarn
 		ewarn "You have sys-libs/libcxx, please make sure that"
@@ -256,6 +248,13 @@ pkg_pretend() {
 		ewarn
 		[[ -z "${NODIE}" ]] && die "The build will fail!"
 	fi
+	if use pgo; then
+		ewarn
+		ewarn "PGO is known to fail with llvm-11, see #80"
+		ewarn "Consider disabling this USE flag if compilation breaks"
+		ewarn "If it succeeds, please let me know your llvm version in the bug mentioned"
+		ewarn
+	fi
 	pre_build_checks
 }
 
@@ -271,14 +270,13 @@ pkg_setup() {
 
 src_prepare() {
 
-	rm "${WORKDIR}/patches/chromium-84-blink-disable-clang-format.patch" || die
-
-	use custom-cflags || rm "${WORKDIR}/patches/chromium-$(ver_cut 1)-compiler.patch" || die
+	use custom-cflags || rm "${WORKDIR}/patches/chromium-88-compiler.patch" || die
 
 	local PATCHES=(
 		"${WORKDIR}/patches"
-		"${FILESDIR}/chromium-88-ozone-deps.patch"
-		"${FILESDIR}/chromium-87-webcodecs-deps.patch"
+		"${FILESDIR}/chromium-89-webcodecs-deps.patch"
+		"${FILESDIR}/chromium-89-EnumTable-crash.patch"
+		"${FILESDIR}/chromium-shim_headers.patch"
 	)
 
 	default
@@ -319,11 +317,11 @@ src_prepare() {
 	done
 
 	if use closure-compile; then
-		ewarn "Keeping binary compiler.jar in sources tree for closure-compile"
+		ewarn "Keeping binary compiler.jar in source tree for closure-compile"
 		sed -i '\!third_party/closure_compiler/compiler/compiler.jar!d' "${ugc_pruning_list}" || die
 	fi
 	if use pgo; then
-		ewarn "Keeping binary profile data in sources tree for pgo"
+		ewarn "Keeping binary profile data in source tree for pgo"
 		sed -i '\!chrome/build/pgo_profiles/.*!d' "${ugc_pruning_list}" || die
 	fi
 
@@ -367,13 +365,6 @@ src_prepare() {
 		third_party/angle/src/third_party/libXNVCtrl
 		third_party/angle/src/third_party/trace_event
 		third_party/angle/src/third_party/volk
-		third_party/angle/third_party/glslang
-		third_party/angle/third_party/spirv-headers
-		third_party/angle/third_party/spirv-tools
-		third_party/angle/third_party/vulkan-headers
-		third_party/angle/third_party/vulkan-loader
-		third_party/angle/third_party/vulkan-tools
-		third_party/angle/third_party/vulkan-validation-layers
 		third_party/apple_apsl
 		third_party/axe-core
 		third_party/blink
@@ -435,7 +426,7 @@ src_prepare() {
 	keeplibs+=(
 		third_party/fusejs
 		third_party/libgifcodec
-		third_party/glslang
+		third_party/liburlpattern
 		third_party/google_input_tools
 		third_party/google_input_tools/third_party/closure_library
 		third_party/google_input_tools/third_party/closure_library/third_party/closure
@@ -465,6 +456,7 @@ src_prepare() {
 		third_party/libsrtp
 		third_party/libsync
 		third_party/libudev
+		third_party/libva_protected_content
 	)
 	use system-libvpx || keeplibs+=(
 		third_party/libvpx
@@ -484,6 +476,7 @@ src_prepare() {
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
+		third_party/minigbm
 		third_party/modp_b64
 		third_party/nasm
 		third_party/nearby
@@ -510,6 +503,7 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 		third_party/perfetto
+		third_party/perfetto/protos/third_party/chromium
 		third_party/pffft
 		third_party/ply
 		third_party/polymer
@@ -528,7 +522,6 @@ src_prepare() {
 		third_party/s2cellid
 		third_party/schema_org
 		third_party/securemessage
-		third_party/shaka-player
 		third_party/shell-encryption
 		third_party/simplejson
 		third_party/skia
@@ -537,9 +530,6 @@ src_prepare() {
 		third_party/skia/third_party/skcms
 		third_party/skia/third_party/vulkan
 		third_party/smhasher
-		third_party/spirv-cross/spirv-cross
-		third_party/spirv-headers
-		third_party/SPIRV-Tools
 		third_party/sqlite
 		third_party/swiftshader
 		third_party/swiftshader/third_party/astc-encoder
@@ -580,7 +570,6 @@ src_prepare() {
 		base/third_party/libevent
 	)
 	keeplibs+=(
-		third_party/adobe
 		third_party/speech-dispatcher
 		third_party/usb_ids
 		third_party/xdg-utils
@@ -711,6 +700,7 @@ src_configure() {
 	myconf_gn+=" use_kerberos=$(usex kerberos true false)"
 	myconf_gn+=" use_pulseaudio=$(usex pulseaudio true false)"
 	myconf_gn+=" use_vaapi=$(usex vaapi true false)"
+	myconf_gn+=" rtc_use_pipewire=$(usex screencast true false) rtc_pipewire_version=\"0.3\""
 	myconf_gn+=" link_pulseaudio=$(usex pulseaudio true false)"
 
 	myconf_gn+=" is_cfi=$(usex cfi true false)"
@@ -767,8 +757,12 @@ src_configure() {
 	# Trying to use gold results in linker crash.
 	myconf_gn+=" use_gold=false use_sysroot=false use_custom_libcxx=false"
 
+	if use clang; then
+	myconf_gn+=" use_lld=true"
+	else
 	# Disable forced lld, bug 641556
 	myconf_gn+=" use_lld=false"
+	fi
 
 	ffmpeg_branding="$(usex proprietary-codecs Chrome Chromium)"
 	myconf_gn+=" proprietary_codecs=$(usex proprietary-codecs true false)"
@@ -903,7 +897,7 @@ src_configure() {
 	append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
 
 	local flags
-	einfo "Building with following compiler settings:"
+	einfo "Building with the following compiler settings:"
 	for flags in C{C,XX} AR NM RANLIB {C,CXX,CPP,LD}FLAGS; do
 		einfo "  ${flags} = \"${!flags}\""
 	done
@@ -916,7 +910,7 @@ src_configure() {
 
 src_compile() {
 	# Final link uses lots of file descriptors.
-	ulimit -n 4096
+	ulimit -n 2048
 
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup
@@ -1011,7 +1005,7 @@ src_install() {
 	doins out/Release/*.pak
 	(
 		shopt -s nullglob
-		local files=(out/Release/*.so)
+		local files=(out/Release/*.so out/Release/*.so.[0-9])
 		[[ ${#files[@]} -gt 0 ]] && doins "${files[@]}"
 	)
 
@@ -1027,7 +1021,7 @@ src_install() {
 	#	doins out/Release/swiftshader/*.so
 	#fi
 
-	use widevine && dosym WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so libwidevinecdm.so
+	use widevine && dosym WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so /usr/$(get_libdir)/chromium-browser/libwidevinecdm.so
 
 	# Install icons
 	local branding size
@@ -1069,5 +1063,15 @@ pkg_postinst() {
 		elog "by navigating to chrome://flags/#enable-accelerated-video-decode"
 		elog "inside Chromium or add --enable-accelerated-video-decode"
 		elog "to CHROMIUM_FLAGS in /etc/chromium/default."
+	fi
+	if use screencast; then
+		elog "Screencast is disabled by default at runtime. Either enable it"
+		elog "by navigating to chrome://flags/#enable-webrtc-pipewire-capturer"
+		elog "inside Chromium or add --enable-webrtc-pipewire-capturer"
+		elog "to CHROMIUM_FLAGS in /etc/chromium/default."
+	fi
+	if use widevine; then
+		elog "widevine requires binary plugins, which are distributed separately"
+		elog "Make sure you have www-plugins/chrome-binary-plugins installed"
 	fi
 }
