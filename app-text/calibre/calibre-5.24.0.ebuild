@@ -69,7 +69,7 @@ COMMON_DEPEND="${PYTHON_DEPS}
 		>=dev-python/pychm-0.8.6[${PYTHON_USEDEP}]
 		>=dev-python/pygments-2.3.1[${PYTHON_USEDEP}]
 		>=dev-python/python-dateutil-2.5.3[${PYTHON_USEDEP}]
-		>=dev-python/PyQt5-5.12[gui,svg,widgets,network,printsupport,${PYTHON_USEDEP}]
+		>=dev-python/PyQt5-5.15.5_pre2107091435[gui,svg,widgets,network,printsupport,${PYTHON_USEDEP}]
 		>=dev-python/PyQtWebEngine-5.12[${PYTHON_USEDEP}]
 		dev-python/regex[${PYTHON_USEDEP}]
 		dev-python/zeroconf[${PYTHON_USEDEP}]
@@ -124,11 +124,6 @@ src_prepare() {
 	eapply \
 		"${FILESDIR}/${PN}-2.9.0-no_updates_dialog.patch" \
 		"${FILESDIR}/${PN}-disable_plugins.patch"
-
-	if ! has_version ">=dev-python/sip-5"; then
-		einfo "Applying SIP v4 patch because SIP v5 was not detected"
-		eapply "${WORKDIR}/${PN}-5.16.0-SIP-v4.patch"
-	fi
 
 	eapply_user
 
