@@ -35,7 +35,7 @@ S="${WORKDIR}"
 src_install() {
 	insinto "/"
 	doins -r *
-
 	fperms 755 /opt/Synology/SynologyDrive/bin/launcher
-	fperms 755 /usr/bin/synology-drive
+	rm -rf ${D}/_gpgbuilder
+	rm -rf ${D}/usr/share/doc/synology-drive
 }
