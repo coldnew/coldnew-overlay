@@ -27,7 +27,7 @@ DEPEND="abc? ( dev-vcs/git )
 
 src_unpack() {
 	if [[ ${PV} = *9999* ]]; then
-		git-2_src_unpack
+		git-r3_src_unpack
 	else
 		default_src_unpack
 	fi
