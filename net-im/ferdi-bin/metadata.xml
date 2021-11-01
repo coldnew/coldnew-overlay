@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <upstream>
+    <bugs-to>https://github.com/getferdi/ferdi/issues</bugs-to>
+    <changelog>https://github.com/getferdi/ferdi/releases</changelog>
+    <doc>https://help.getferdi.com/</doc>
+  </upstream>    
+  <maintainer type="person">
+    <name>Emilien Mottet</name>
+    <email>emilien.mottet@grenoble-inp.org</email>
+  </maintainer>
+  <longdescription>
+    Ferdi is a messaging browser that allows you to combine your favorite messaging
+    services into one application.
+    
+    It is based on Franz - a software already used by thousands of people - with the
+    difference that Ferdi gives you many additional features and doesn't restrict its
+    usage!
+    
+    Ferdi is compatible with your existing Franz account so you can continue right where
+    you left off.
+  </longdescription>
+</pkgmetadata>
