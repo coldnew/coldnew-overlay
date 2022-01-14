@@ -2,16 +2,16 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=4
+EAPI=7
 
 DESCRIPTION="Eselect module to maintain vala compiler symlink"
-HOMEPAGE="http://code.google.com/p/eselect-vala/"
+HOMEPAGE="https://github.com/coldnew/eselect-vala"
 
-SRC_URI="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/eselect-vala/${P}.tar.gz"
+SRC_URI="https://github.com/coldnew/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="amd64 x86 ~arm ~arm64"
 IUSE=""
 
 RDEPEND="app-admin/eselect
@@ -19,7 +19,7 @@ RDEPEND="app-admin/eselect
 DEPEND="${RDEPEND}
 	>=sys-devel/m4-1.4.13"
 
-DOCS="AUTHORS README.markdown"
+DOCS="AUTHORS README"
 
 src_install() {
 	emake DESTDIR="${D}" install

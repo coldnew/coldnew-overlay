@@ -7,9 +7,9 @@ EAPI=7
 inherit git-r3
 
 DESCRIPTION="Eselect module to maintain vala compiler symlink"
-HOMEPAGE="http://code.google.com/p/eselect-vala/"
+HOMEPAGE="https://github.com/coldnew/eselect-vala"
 
-EGIT_REPO_URI="http://code.google.com/p/eselect-vala/"
+EGIT_REPO_URI="https://github.com/coldnew/eselect-vala"
 
 LICENSE="GPL-2"
 SLOT="0"
