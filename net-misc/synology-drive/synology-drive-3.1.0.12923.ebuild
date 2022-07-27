@@ -17,7 +17,7 @@ MY_REV="$(ver_cut 4-6)"
 
 SRC_URI_BASE="https://global.download.synology.com/download/Utility/SynologyDriveClient/${MY_PV}-${MY_REV}/Ubuntu/Installer"
 SRC_URI="x86? ( ${SRC_URI_BASE}/i686/synology-drive-client-${MY_REV}.i686.deb -> synology-drive-${PV}.i686.deb )
-	 amd64? ( ${SRC_URI_BASE}/x86_64/synology-drive-client-${MY_REV}.x86_64.deb -> synology-drive-${PV}.x86_64.deb )"
+		amd64? ( ${SRC_URI_BASE}/x86_64/synology-drive-client-${MY_REV}.x86_64.deb -> synology-drive-${PV}.x86_64.deb )"
 
 LICENSE="all-rights-reserved"
 SLOT="0"
@@ -33,7 +33,7 @@ RESTRICT="strip"
 S="${WORKDIR}"
 
 src_install() {
-    cp -a opt usr "${D}" || die
-    rm -rf ${D}/_gpgbuilder
-    rm -rf ${D}/usr/share/doc/synology-drive
+	cp -a opt usr "${D}" || die
+	rm -rf ${D}/_gpgbuilder
+	rm -rf ${D}/usr/share/doc/synology-drive
 }
