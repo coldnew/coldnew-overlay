@@ -1,8 +1,8 @@
 # Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
-inherit cmake-utils
+EAPI=7
+inherit cmake
 
 RESTRICT="mirror"
 
@@ -41,10 +41,3 @@ DEPEND="${RDEPEND}"
 
 S="${WORKDIR}/${PN}-v${PV}"
 
-src_configure() {
-	cmake-utils_src_configure
-}
-
-src_install() {
-	cmake-utils_src_install
-}
