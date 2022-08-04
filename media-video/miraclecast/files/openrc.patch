@@ -1,0 +1,208 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a073be0..c8dbe95 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -11,6 +11,19 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake
+ set(CMAKE_C_FLAGS "-std=gnu11 ${CMAKE_C_FLAGS}")
+ add_definitions(-D_GNU_SOURCE)
+ 
++OPTION(ENABLE_SYSTEMD "Enable Systemd support" ON)
++
++find_package(PkgConfig)
++
++if(ENABLE_SYSTEMD)
++	pkg_check_modules (SYSTEMD REQUIRED systemd>=213)
++	SET(SESSION_LIBRARIES "${SYSTEMD_LIBRARIES}")
++else(ENABLE_SYSTEMD)
++	pkg_check_modules (ELOGIND REQUIRED libelogind>=213)
++	include_directories ("${ELOGIND_INCLUDEDIR}")
++	SET(SESSION_LIBRARIES "${ELOGIND_LIBRARIES}")
++endif(ENABLE_SYSTEMD)
++
+ SET(BUILD_BINDIR "${CMAKE_INSTALL_PREFIX}/bin")
+ OPTION(BUILD_ENABLE_DEBUG "Enable Debug" ON )
+ OPTION(RELY_UDEV "Rely in udev tag to select device" OFF )
+@@ -24,7 +37,6 @@ endif()
+ set(SYSCONFDIR "/etc" CACHE STRING "system config dir")
+ set(DATADIR "${CMAKE_INSTALL_PREFIX}/share" CACHE STRING "shared data dir")
+ 
+-find_package(PkgConfig)
+ pkg_check_modules (GLIB2 REQUIRED glib-2.0)
+ pkg_check_modules (UDEV REQUIRED libudev)
+ pkg_check_modules (SYSTEMD REQUIRED libsystemd)
+diff --git a/config.h.cmake b/config.h.cmake
+index ddc0cd1..650640e 100644
+--- a/config.h.cmake
++++ b/config.h.cmake
+@@ -1,6 +1,8 @@
+ #ifndef CONFIG_H
+ #define CONFIG_H
+ 
++#cmakedefine ENABLE_SYSTEMD
++
+ #cmakedefine BUILD_BINDIR "@BUILD_BINDIR@"
+ 
+ #cmakedefine PACKAGE_STRING "@PACKAGE_STRING@"
+diff --git a/src/ctl/sinkctl.c b/src/ctl/sinkctl.c
+index 9a6489d..6e77a0d 100644
+--- a/src/ctl/sinkctl.c
++++ b/src/ctl/sinkctl.c
+@@ -17,6 +17,8 @@
+  * along with MiracleCast; If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include "config.h"
++
+ #include <errno.h>
+ #include <getopt.h>
+ #include <locale.h>
+@@ -30,7 +32,11 @@
+ #include <sys/time.h>
+ #include <systemd/sd-bus.h>
+ #include <systemd/sd-event.h>
++
++#ifdef ENABLE_SYSTEMD
+ #include <systemd/sd-journal.h>
++#endif
++
+ #include <time.h>
+ #include <unistd.h>
+ #include "ctl.h"
+@@ -399,6 +405,7 @@ static void spawn_gst(struct ctl_sink *s)
+ 		sigemptyset(&mask);
+ 		sigprocmask(SIG_SETMASK, &mask, NULL);
+ 
++#ifdef ENABLE_SYSTEMD
+ 		/* redirect stdout/stderr to journal */
+ 		fd_journal = sd_journal_stream_fd("miracle-sinkctl-gst",
+ 						  LOG_DEBUG,
+@@ -408,9 +415,12 @@ static void spawn_gst(struct ctl_sink *s)
+ 			dup2(fd_journal, 1);
+ 			dup2(fd_journal, 2);
+ 		} else {
++#endif
+ 			/* no journal? redirect stdout to parent's stderr */
+ 			dup2(2, 1);
++#ifdef ENABLE_SYSTEMD
+ 		}
++#endif
+ 
+ 		launch_player(s);
+ 		_exit(1);
+diff --git a/src/shared/CMakeLists.txt b/src/shared/CMakeLists.txt
+index f757fba..7cbd283 100644
+--- a/src/shared/CMakeLists.txt
++++ b/src/shared/CMakeLists.txt
+@@ -1,7 +1,5 @@
+ set(CMAKE_C_FLAGS "-std=gnu11") 
+ 
+-find_package(PkgConfig)
+-pkg_check_modules (SYSTEMD REQUIRED systemd>=213)
+ set(miracle-shared_SOURCES rtsp.h
+                              rtsp.c 
+                              shl_dlist.h 
+@@ -18,7 +16,7 @@ set(miracle-shared_SOURCES rtsp.h
+                              wpas.h 
+                              wpas.c)
+ add_library(miracle-shared STATIC ${miracle-shared_SOURCES})
+-target_link_libraries (miracle-shared systemd)
++target_link_libraries (miracle-shared ${SESSION_LIBRARIES})
+ 
+ 
+ ########### install files ###############
+diff --git a/src/wifi/wifid-supplicant.c b/src/wifi/wifid-supplicant.c
+index a2a3a43..33f022c 100644
+--- a/src/wifi/wifid-supplicant.c
++++ b/src/wifi/wifid-supplicant.c
+@@ -19,6 +19,8 @@
+ 
+ #define LOG_SUBSYSTEM "supplicant"
+ 
++#include "config.h"
++
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdbool.h>
+@@ -27,7 +29,11 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <systemd/sd-event.h>
++
++#ifdef ENABLE_SYSTEMD
+ #include <systemd/sd-journal.h>
++#endif
++
+ #include <unistd.h>
+ #include "shl_dlist.h"
+ #include "shl_log.h"
+@@ -35,7 +41,6 @@
+ #include "util.h"
+ #include "wifid.h"
+ #include "wpas.h"
+-#include "config.h"
+ 
+ struct supplicant_group {
+ 	unsigned long users;
+@@ -374,6 +379,7 @@ static int supplicant_group_spawn_dhcp_server(struct supplicant_group *g,
+ 		sigemptyset(&mask);
+ 		sigprocmask(SIG_SETMASK, &mask, NULL);
+ 
++#ifdef ENABLE_SYSTEMD
+ 		/* redirect stdout/stderr to journal */
+ 		sprintf(journal_id, "miracle-dhcp-%s", g->ifname);
+ 		fd_journal = sd_journal_stream_fd(journal_id, LOG_INFO, false);
+@@ -382,9 +388,12 @@ static int supplicant_group_spawn_dhcp_server(struct supplicant_group *g,
+ 			dup2(fd_journal, 1);
+ 			dup2(fd_journal, 2);
+ 		} else {
++#endif
+ 			/* no journal? redirect stdout to parent's stderr */
+ 			dup2(2, 1);
++#ifdef ENABLE_SYSTEMD
+ 		}
++#endif
+ 
+ 		i = 0;
+ 		argv[i++] = (char*) "miracle-dhcp";
+@@ -438,6 +447,7 @@ static int supplicant_group_spawn_dhcp_client(struct supplicant_group *g)
+ 		sigemptyset(&mask);
+ 		sigprocmask(SIG_SETMASK, &mask, NULL);
+ 
++#ifdef ENABLE_SYSTEMD
+ 		/* redirect stdout/stderr to journal */
+ 		sprintf(journal_id, "miracle-dhcp-%s", g->ifname);
+ 		fd_journal = sd_journal_stream_fd(journal_id, LOG_INFO, false);
+@@ -446,9 +456,12 @@ static int supplicant_group_spawn_dhcp_client(struct supplicant_group *g)
+ 			dup2(fd_journal, 1);
+ 			dup2(fd_journal, 2);
+ 		} else {
++#endif
+ 			/* no journal? redirect stdout to parent's stderr */
+ 			dup2(2, 1);
++#ifdef ENABLE_SYSTEMD
+ 		}
++#endif
+ 
+ 		i = 0;
+ 		argv[i++] = (char*) "miracle-dhcp";
+@@ -2379,6 +2392,7 @@ static void supplicant_run(struct supplicant *s, const char *binary)
+ 	sigemptyset(&mask);
+ 	sigprocmask(SIG_SETMASK, &mask, NULL);
+ 
++#ifdef ENABLE_SYSTEMD
+ 	/* redirect stdout/stderr to journal */
+ 	sprintf(journal_id, "miracle-wifid-%s-%u",
+ 		s->l->ifname, s->l->ifindex);
+@@ -2388,9 +2402,12 @@ static void supplicant_run(struct supplicant *s, const char *binary)
+ 		dup2(fd_journal, 1);
+ 		dup2(fd_journal, 2);
+ 	} else {
++#endif
+ 		/* no journal? redirect stdout to parent's stderr */
+ 		dup2(2, 1);
++#ifdef ENABLE_SYSTEMD
+ 	}
++#endif
+ 
+ 	/* initialize wpa_supplicant args */
+ 	i = 0;
