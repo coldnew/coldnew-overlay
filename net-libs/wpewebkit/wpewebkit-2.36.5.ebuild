@@ -3,10 +3,10 @@
 
 EAPI=7
 CMAKE_MAKEFILE_GENERATOR="ninja"
-PYTHON_COMPAT=( python{3_6,3_7} )
+PYTHON_COMPAT=( python{3_9,3_10,3_11} )
 USE_RUBY="ruby24 ruby25 ruby26 ruby27"
 
-inherit cmake-utils python-any-r1 ruby-single
+inherit cmake python-any-r1 ruby-single
 
 DESCRIPTION="WebKit port optimized for embedded devices"
 HOMEPAGE="https://wpewebkit.org/"
@@ -101,8 +101,9 @@ src_configure() {
 		-DENABLE_WEBDRIVER=$(usex webdriver)
 		-DENABLE_WEB_CRYPTO=$(usex webcrypto)
 		-DENABLE_XSLT=ON
+		-DUSE_SOUP2=ON
 		${ruby_interpreter}
 	)
 
-	cmake-utils_src_configure
+	cmake_src_configure
 }
