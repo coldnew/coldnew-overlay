@@ -1,0 +1,39 @@
+diff --git a/meson.build b/meson.build
+index 70c078d..087b229 100644
+--- a/meson.build
++++ b/meson.build
+@@ -101,8 +101,7 @@ configure_file(
+ 	configuration: conf
+ )
+ 
+-service_manager = get_option('service_manager')
+-if service_manager.contains('systemd')
++if get_option('systemd')
+ 	systemd = dependency('systemd')
+ 	unitdir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
+ 
+@@ -116,9 +115,7 @@ if service_manager.contains('systemd')
+ 	)
+ 
+ 	install_data('etc/udev/50-ipts.rules', install_dir: rulesdir)
+-endif
+-
+-if service_manager.contains('openrc')
++else
+ 	dependency('openrc')
+ 	openrcdir = join_paths(sysconfdir, 'init.d')
+ 
+diff --git a/meson_options.txt b/meson_options.txt
+index 305901a..e82a268 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,8 +1,3 @@
+-option(
+-	'service_manager',
+-	type: 'array',
+-	choices: ['systemd', 'openrc'],
+-	value: ['systemd']
+-)
++option('systemd', type: 'boolean', value: false)
+ option('sample_config', type: 'boolean', value: true)
+ option('debug_tool', type: 'boolean', value: true)
