@@ -17,7 +17,8 @@ DEPEND="${RDEPEND}
 		dev-cpp/gflags[${MULTILIB_USEDEP}] )
 	dev-util/cmake"
 SLOT="0/${PV}"
-inherit cmake-utils
+
+inherit cmake
 EGIT_COMMIT="c5e45dcae58f5cb3eb893f8000c1de88a8fe3c4e"
 EGIT_REPO_URI="https://chromium.googlesource.com/libyuv/libyuv"
 FN_DEST="${P}.tar.gz"
@@ -39,7 +40,7 @@ src_unpack() {
 src_prepare() {
 	default
 	eapply "${FILESDIR}/${PN}-1741-cmake-libdir.patch"
-	cmake-utils_src_prepare
+	cmake_src_prepare
 	multilib_copy_sources
 }
 
@@ -48,15 +49,15 @@ multilib_src_configure() {
 	if use test ; then
 		mycmakeargs+=( -DTEST=ON )
 	fi
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 multilib_src_compile() {
-	cmake-utils_src_compile
+	cmake_src_compile
 }
 
 multilib_src_install() {
-	cmake-utils_src_install
+	cmake_src_install
 	insinto /usr/$(get_libdir)/pkgconfig
 	cat "${FILESDIR}/${PN}.pc.in" | \
 	sed -e "s|@prefix@|/usr|" \
