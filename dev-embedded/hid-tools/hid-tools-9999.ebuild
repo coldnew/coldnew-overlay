@@ -14,7 +14,7 @@ HOMEPAGE="https://gitlab.freedesktop.org/bentiss/hid-tools"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 
 DEPEND=""
 RDEPEND="
