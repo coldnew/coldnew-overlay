@@ -3,23 +3,28 @@
 
 EAPI=7
 
-inherit meson eutils ninja-utils udev
+inherit meson eutils ninja-utils udev git-r3
 
 DESCRIPTION="Userspace daemon for Intel Precise Touch & Stylus"
 HOMEPAGE="https://github.com/linux-surface/iptsd"
-SRC_URI="https://github.com/linux-surface/iptsd/archive/refs/tags/v${PV}.tar.gz"
+EGIT_REPO_URI="https://github.com/linux-surface/iptsd.git"
 
 LICENSE="GPL-2+"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="systemd"
 
-DEPEND="dev-libs/inih"
+DEPEND="
+    dev-libs/inih
+    dev-libs/hidrd
+    dev-libs/libfmt
+    dev-libs/spdlog
+"
 RDEPEND="${DEPEND}"
 BDEPEND="dev-util/ninja sys-devel/gcc dev-util/meson"
 
 PATCHES=(
-	"${FILESDIR}/0001-meson-with-systemd-option.0.5.1.patch"
+	"${FILESDIR}/0001-meson-with-systemd-option.9999.patch"
 )
 
 src_configure() {

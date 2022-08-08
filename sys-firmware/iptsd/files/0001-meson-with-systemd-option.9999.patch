@@ -1,0 +1,44 @@
+diff --git a/etc/meson.build b/etc/meson.build
+index fa7f0ab..0dfd61f 100644
+--- a/etc/meson.build
++++ b/etc/meson.build
+@@ -3,9 +3,8 @@ install_subdir('config', install_dir: configdir, strip_directory: true)
+ configure_file(input: 'systemd/iptsd@.service.in', output: 'iptsd@.service', configuration: conf)
+ configure_file(input: 'openrc/iptsd.initd.in', output: 'iptsd.initd', configuration: conf)
+ 
+-service_manager = get_option('service_manager')
+-if service_manager.contains('systemd')
+-  systemd = dependency('systemd', required: false)
++if get_option('systemd')
++  systemd = dependency('systemd', required: true)
+ 
+   if systemd.found()
+     unitdir = systemd.get_variable(pkgconfig: 'systemdsystemunitdir')
+@@ -19,11 +18,9 @@ if service_manager.contains('systemd')
+     install_data(unit, install_dir: unitdir)
+     install_data('udev/50-ipts.rules', install_dir: rulesdir)
+   else
+-    warning('systemd integration was enabled, but systemd was not found')
++    error('systemd integration was enabled, but systemd was not found')
+   endif
+-endif
+-
+-if service_manager.contains('openrc')
++else
+   openrcdir = join_paths(sysconfdir, 'init.d')
+ 
+   unit = join_paths(meson.current_build_dir(), 'iptsd.initd')
+diff --git a/meson_options.txt b/meson_options.txt
+index 943ec1b..23c7b6b 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,8 +1,4 @@
+-option('service_manager',
+-       type: 'array',
+-       choices: ['systemd', 'openrc'],
+-       value: ['systemd'])
+-
++option('systemd', type: 'boolean', value: false)
+ option('sample_config', type: 'boolean', value: true)
+ option('debug_tools',
+        type: 'array',
