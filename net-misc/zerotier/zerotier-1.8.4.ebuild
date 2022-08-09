@@ -13,6 +13,7 @@ LICENSE="BSL-1.1"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~x86"
 IUSE="clang cpu_flags_arm_neon"
+RESTRICT="mirror"
 
 S="${WORKDIR}/ZeroTierOne-${PV}"
 
@@ -25,7 +26,7 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-1.4.6-respect-ldflags.patch"
+	"${FILESDIR}/${PN}-1.8.4-respect-ldflags.patch"
 	"${FILESDIR}/${PN}-1.4.6-add-armv7a-support.patch"
 )
 

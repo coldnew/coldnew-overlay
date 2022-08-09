@@ -1,11 +1,12 @@
---- a/make-linux.mk	2019-09-05 11:02:16.000000000 -0700
-+++ b/make-linux.mk	2019-09-27 21:01:21.000000000 -0700
-@@ -77,7 +77,7 @@
+diff -ru a/make-linux.mk b/make-linux.mk
+--- a/make-linux.mk	2021-12-01 22:27:55.000000000 +0000
++++ b/make-linux.mk	2021-12-28 02:38:44.268299953 +0000
+@@ -72,7 +72,7 @@
  	override CFLAGS+=-Wall -Wno-deprecated -pthread $(INCLUDES) -DNDEBUG $(DEFS)
  	CXXFLAGS?=-O3 -fstack-protector -fPIE
  	override CXXFLAGS+=-Wall -Wno-deprecated -std=c++11 -pthread $(INCLUDES) -DNDEBUG $(DEFS)
 -	LDFLAGS=-pie -Wl,-z,relro,-z,now
 +	LDFLAGS?=-pie -Wl,-z,relro,-z,now
- 	STRIP?=strip
- 	STRIP+=--strip-all
  endif
+ 
+ ifeq ($(ZT_QNAP), 1)
