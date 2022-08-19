@@ -5,7 +5,7 @@
 EAPI=7
 
 RESTRICT="test" # needs some pointy sticks. Seriously.
-PYTHON_COMPAT=(python{3_6,3_7,3_8,3_9})
+PYTHON_COMPAT=(python{3_6,3_7,3_8,3_9,3_10})
 
 inherit distutils-r1 eutils python-r1
 DESCRIPTION="python-based serial dump and timing program - good for embedded Linux development"
