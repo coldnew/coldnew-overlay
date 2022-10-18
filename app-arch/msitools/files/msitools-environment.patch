@@ -1,0 +1,198 @@
+diff --git a/tools/wixl/builder.vala b/tools/wixl/builder.vala
+index 9e2490568346fd6bce3e89e0381238714070b442..46ae4b36066f8443263dbdd8a05ace43c2c72497 100644
+--- a/tools/wixl/builder.vala
++++ b/tools/wixl/builder.vala
+@@ -179,6 +179,10 @@ namespace Wixl {
+             }
+             if (db.table_app_search.records.length () > 0)
+                 add (MSIDefault.Action.AppSearch);
++            if (db.table_environment.records.length () > 0) {
++                add (MSIDefault.Action.RemoveEnvironmentStrings);
++                add (MSIDefault.Action.WriteEnvironmentStrings);
++            }
+             table.add_sorted_actions ();
+ 
+             // InstallUISequence
+@@ -1146,6 +1150,82 @@ namespace Wixl {
+             media.Id = "1";
+             visit_media (media);
+         }
++
++        enum EnvironmentAction {
++            CREATE,
++            SET,
++            REMOVE;
++
++            public static EnvironmentAction from_string(string s) throws GLib.Error {
++                if (s == "create")
++                    return CREATE;
++                if (s == "set")
++                    return SET;
++                if (s == "remove")
++                    return REMOVE;
++                throw new Wixl.Error.FAILED ("Can't convert string to enum");
++            }
++        }
++
++        enum EnvironmentPart {
++            ALL,
++            FIRST,
++            LAST;
++
++            public static EnvironmentPart from_string(string s) throws GLib.Error {
++                if (s == null || s == "all")
++                    return ALL;
++                if (s == "first")
++                    return FIRST;
++                if (s == "last")
++                    return LAST;
++                throw new Wixl.Error.FAILED ("Can't convert string to enum");
++            }
++        }
++
++        public override void visit_environment (WixEnvironment env) throws GLib.Error {
++            string name_prefix = null, value = null;
++
++            switch(EnvironmentAction.from_string(env.Action)) {
++                case EnvironmentAction.CREATE:
++                    name_prefix = "+";
++                    break;
++                case EnvironmentAction.SET:
++                    name_prefix = "=";
++                    break;
++                case EnvironmentAction.REMOVE:
++                    name_prefix = "!";
++                    break;
++            }
++
++            if(parse_yesno(env.Permanent)) {
++                name_prefix += "-";
++            }
++
++            if(parse_yesno(env.System)) {
++                name_prefix += "*";
++            }
++
++            var name = name_prefix + env.Name;
++
++            var separator = ";";
++            if(env.Separator != null)
++                separator = env.Separator;
++
++            switch(EnvironmentPart.from_string(env.Part)) {
++                case EnvironmentPart.ALL:
++                    value = env.Value;
++                    break;
++                case EnvironmentPart.FIRST:
++                    value = env.Value + separator + "[~]";
++                    break;
++                case EnvironmentPart.LAST:
++                    value = "[~]" + separator + env.Value;
++                    break;
++            }
++            var component = env.parent as WixComponent;
++            db.table_environment.add(Uuid.string_random (), name, value, component.Id);
++        }
+     }
+ 
+ } // Wixl
+diff --git a/tools/wixl/msi.vala b/tools/wixl/msi.vala
+index 077848117132d89afad9f9c67d62de936ad689f7..3ce70746721e28bfb64fc01190c3dabefb5d74e3 100644
+--- a/tools/wixl/msi.vala
++++ b/tools/wixl/msi.vala
+@@ -720,6 +720,27 @@ namespace Wixl {
+         }
+     }
+ 
++    class MsiTableEnvironment: MsiTable {
++            static construct {
++                name = "Environment";
++                sql_create = "CREATE TABLE `Environment` (`Environment` CHAR(72) NOT NULL, `Name` CHAR(64) NOT NULL LOCALIZABLE, `Value` CHAR(255) LOCALIZABLE, `Component_` CHAR(72) NOT NULL PRIMARY KEY `Environment`)";
++                sql_insert = "INSERT INTO `Environment` (`Environment`, `Name`, `Value`, `Component_`) VALUES (?, ?, ?, ?)";
++            }
++
++            public Libmsi.Record add (string Environment, string Name, string? Value, string Component) throws GLib.Error {
++                var rec = new Libmsi.Record (4);
++
++                if (!rec.set_string (1, Environment) ||
++                    !rec.set_string (2, Name) ||
++                    (Value != null && !rec.set_string (3, Value)) ||
++                    !rec.set_string (4, Component))
++                    throw new Wixl.Error.FAILED ("failed to add record");
++
++                records.append (rec);
++                return rec;
++            }
++        }
++
+     class MsiSummaryInfo: Object {
+         public Libmsi.SummaryInfo properties;
+ 
+@@ -818,6 +839,7 @@ namespace Wixl {
+         public MsiTableCreateFolder table_create_folder;
+         public MsiTableSignature table_signature;
+         public MsiTableFileHash table_file_hash;
++        public MsiTableEnvironment table_environment;
+ 
+         public HashTable<string, MsiTable> tables;
+ 
+@@ -884,6 +906,7 @@ namespace Wixl {
+             table_reg_locator = new MsiTableRegLocator ();
+             table_create_folder = new MsiTableCreateFolder ();
+             table_file_hash = new MsiTableFileHash ();
++            table_environment = new MsiTableEnvironment ();
+ 
+             foreach (var t in new MsiTable[] {
+                     table_admin_execute_sequence,
+@@ -914,6 +937,7 @@ namespace Wixl {
+                     table_reg_locator,
+                     table_create_folder,
+                     table_file_hash,
++                    table_environment,
+                     new MsiTableError (),
+                     new MsiTableValidation ()
+                 }) {
+diff --git a/tools/wixl/wix.vala b/tools/wixl/wix.vala
+index 396c93a5b2c0456bc1e2d511ee36219d440dc98f..fb215f10bcc6ec4c8df775e511683dd4639cc3bd 100644
+--- a/tools/wixl/wix.vala
++++ b/tools/wixl/wix.vala
+@@ -66,6 +66,7 @@ namespace Wixl {
+         public abstract void visit_binary (WixBinary binary) throws GLib.Error;
+         public abstract void visit_major_upgrade (WixMajorUpgrade major) throws GLib.Error;
+         public abstract void visit_media_template (WixMediaTemplate media) throws GLib.Error;
++        public abstract void visit_environment (WixEnvironment env) throws GLib.Error;
+     }
+ 
+     public abstract class WixNode: Object {
+@@ -1058,6 +1059,7 @@ namespace Wixl {
+                 typeof (WixRegistryKey),
+                 typeof (WixServiceControl),
+                 typeof (WixServiceInstall),
++                typeof (WixEnvironment)
+             });
+         }
+ 
+@@ -1153,4 +1155,23 @@ namespace Wixl {
+         }
+     }
+ 
++    public class WixEnvironment: WixElement {
++        static construct {
++            name = "Environment";
++        }
++
++        public string Action { get; set; }
++        public string Name { get; set; }
++        public string Part { get; set; }
++        public string Permanent { get; set; }
++        public string Separator { get; set; }
++        public string System { get; set; }
++        public string Value { get; set; }
++
++        public override void accept (WixNodeVisitor visitor) throws GLib.Error {
++            visitor.visit_environment(this);
++        }
++
++    }
++
+ } // Wixl
