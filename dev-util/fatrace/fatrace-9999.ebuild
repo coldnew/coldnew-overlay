@@ -11,7 +11,7 @@ EGIT_REPO_URI="https://github.com/martinpitt/fatrace.git"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64 ~arm64"
 
 src_install() {
 	emake DESTDIR="${D}" PREFIX=/usr install || die "Install failed."
