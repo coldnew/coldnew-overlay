@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=7
+EAPI=8
 
-inherit unpacker eutils
+inherit unpacker
 
 DESCRIPTION="Synology Drive is the syncservice for Synology NAS."
 HOMEPAGE="https://www.synology.com/de-de/dsm/cloud_services"
@@ -16,11 +16,11 @@ MY_PV="$(ver_cut 1-3)"
 MY_REV="$(ver_cut 4-6)"
 
 SRC_URI_BASE="https://global.synologydownload.com/download/Utility/SynologyDriveClient/${MY_PV}-${MY_REV}/Ubuntu/Installer"
-SRC_URI="amd64? ( ${SRC_URI_BASE}/x86_64/synology-drive-client-${MY_REV}.x86_64.deb -> synology-drive-${PV}.x86_64.deb )"
+SRC_URI="amd64? ( ${SRC_URI_BASE}/synology-drive-client-${MY_REV}.x86_64.deb -> synology-drive-${PV}.x86_64.deb )"
 
 LICENSE="all-rights-reserved"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="amd64"
 IUSE=""
 
 DEPEND="dev-libs/icu"
