@@ -2,10 +2,10 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=7
+EAPI=8
 
 # project is hosted on github.com, so git-2 is needed (git is deprecated)
-inherit eutils git-r3 systemd
+inherit git-r3 systemd
 
 DESCRIPTION="coldnew's MacbookPro Retina Early 2015 configs for Gentoo Linux."
 HOMEPAGE="http://github.com/coldnew/macbookpro-2015-config"

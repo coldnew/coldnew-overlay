@@ -1,16 +1,17 @@
 # Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit flag-o-matic git-r3
+inherit flag-o-matic
 
 DESCRIPTION="An open-source multi-platform crash reporting system"
 HOMEPAGE="http://code.google.com/p/google-breakpad/"
-EGIT_REPO_URI="https://chromium.googlesource.com/breakpad/breakpad"
 
 if [[ ${PV} == 9999 ]]; then
+    inherit git-r3
 	KEYWORDS=""
+    EGIT_REPO_URI="https://chromium.googlesource.com/breakpad/breakpad"
 else
 	KEYWORDS="~x86 ~amd64"
 fi
