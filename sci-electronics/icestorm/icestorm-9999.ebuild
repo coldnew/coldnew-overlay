@@ -1,21 +1,20 @@
 # Copyright 2019-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2 or later
 
-EAPI=6
+EAPI=8
 
 if [[ ${PV} == *9999 ]] ; then
     SCM="git-r3"
     EGIT_REPO_URI="https://github.com/cliffordwolf/${PN}.git"
+    inherit ${SCM}
 fi
-
-inherit eutils ${SCM}
 
 DESCRIPTION="Project IceStorm - Lattice iCE40 FPGAs Bitstream Documentaion (Reverse Engineered)"
 HOMEPAGE="http://www.clifford.at/icestorm/"
 
 if [[ ${PV} == *9999 ]] ; then
     SRC_URI=""
-    KEYWORDS="~amd64 ~x86"
+    KEYWORDS="**"
 else
     SRC_URI="https://github.com/cliffordwolf/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
     KEYWORDS="~amd64 ~x86"
