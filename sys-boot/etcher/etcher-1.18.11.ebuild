@@ -2,24 +2,23 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
-EAPI=6
+EAPI=8
 
-inherit eutils unpacker
+inherit unpacker
 
 DESCRIPTION="Flash OS images to SD cards & USB drives, safely and easily."
 HOMEPAGE="https://etcher.io/"
-SRC_URI="https://github.com/balena-io/${PN}/releases/download/v${PV}/balena-${PN}-electron_${PV}_amd64.deb"
-
+SRC_URI="https://github.com/balena-io/${PN}/releases/download/v${PV}/balena-${PN}_${PV}_amd64.deb"
 LICENSE="GPL2"
 SLOT="0"
-KEYWORDS="amd64 x86"
+KEYWORDS="amd64"
 IUSE=""
 
 DEPEND="dev-libs/nss
 	gnome-base/gconf
 	media-libs/alsa-lib
 	sys-apps/lsb-release
-	x11-libs/gtk+:2
+	x11-libs/gtk+:3
 	x11-libs/libXtst
 	x11-libs/libnotify"
 RDEPEND="${DEPEND}"
