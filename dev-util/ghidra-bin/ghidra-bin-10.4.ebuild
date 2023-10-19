@@ -1,17 +1,15 @@
 # Ghidra ebuild (binary version)
 # Maintainer: Xoores <gentoo@xoores.cz>
-EAPI=7
+EAPI=8
 
 # For some reason NSA likes to "stamp" releases with build date. That's
 # nice, but it is a PITA because I have to change this for every release :-(
-GHIDRA_DATESTAMP="20210804"
+GHIDRA_DATESTAMP="20230928"
 
 # Install Ghidra to /opt and use separate directory for each version. That
 # will enable us to keep multiple versions installed at the same time.
 GHIDRA_DESTDIR="/opt/ghidra-${PV}"
 
-
-inherit eutils
 
 DESCRIPTION="A software reverse engineering (SRE) suite of tools developed by NSA"
 HOMEPAGE="https://ghidra-sre.org/"
