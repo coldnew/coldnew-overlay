@@ -1,10 +1,10 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{8..9} )
-PYTHON_REQ_USE="ipv6,sqlite,ssl"
+PYTHON_COMPAT=( python3_{8..12} )
+PYTHON_REQ_USE="ipv6(+),sqlite,ssl"
 
 inherit bash-completion-r1 desktop toolchain-funcs python-single-r1 xdg-utils
 
@@ -50,7 +50,7 @@ COMMON_DEPEND="${PYTHON_DEPS}
 	>=sys-apps/dbus-1.10.8
 	$(python_gen_cond_dep '
 		>=dev-python/apsw-3.25.2_p1[${PYTHON_USEDEP}]
-		dev-python/beautifulsoup:4[${PYTHON_USEDEP}]
+		dev-python/beautifulsoup4[${PYTHON_USEDEP}]
 		>=dev-python/chardet-3.0.3[${PYTHON_USEDEP}]
 		>=dev-python/cssselect-0.7.1[${PYTHON_USEDEP}]
 		>=dev-python/css-parser-1.0.4[${PYTHON_USEDEP}]
@@ -72,7 +72,7 @@ COMMON_DEPEND="${PYTHON_DEPS}
 		>=dev-python/PyQt5-5.15.5_pre2107091435[gui,svg,widgets,network,printsupport,${PYTHON_USEDEP}]
 		>=dev-python/PyQtWebEngine-5.12[${PYTHON_USEDEP}]
 		dev-python/regex[${PYTHON_USEDEP}]
-		dev-python/zeroconf[${PYTHON_USEDEP}]
+		dev-python/python-zeroconf[${PYTHON_USEDEP}]
 	')
 	dev-qt/qtcore:5=
 	dev-qt/qtdbus:5=
