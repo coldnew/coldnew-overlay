@@ -3,8 +3,8 @@
 # $Header: $
 # This ebuild is a modified version of ebuild from java overlay.
 
-EAPI="6"
-inherit eutils java-pkg-2
+EAPI="8"
+inherit java-pkg-2
 
 JAVA_PKG_WANT_TARGET=1.8
 
