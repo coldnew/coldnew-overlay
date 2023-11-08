@@ -3,7 +3,7 @@
 EAPI=8
 
 # get the current value from the yosys makefile...look for ABCREV
-ABC_GIT_COMMIT=bb64142b07794ee685494564471e67365a093710
+ABC_GIT_COMMIT=896e5e7dedf9b9b1459fa019f1fa8aa8101fdf43
 
 DESCRIPTION="framework for Verilog RTL synthesis"
 HOMEPAGE="http://www.clifford.at/yosys/"
@@ -25,7 +25,6 @@ DEPEND="${RDEPEND}"
 BDEPEND="dev-vcs/git"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-0.31-abc-c++17-fix.patch"
 )
 
 QA_PRESTRIPPED="
