@@ -19,13 +19,13 @@ if [[ $PV = 9999* ]]; then
 	KEYWORDS=""
 else
 	SRC_URI="https://wayland.freedesktop.org/releases/${P}.tar.xz"
-	KEYWORDS="~amd64 ~arm ~x86"
+	KEYWORDS="amd64 arm x86"
 fi
 
 LICENSE="MIT CC-BY-SA-3.0"
 SLOT="0"
 
-IUSE="colord +desktop +drm editor examples fbdev fullscreen +gles2 headless ivi jpeg +launch lcms pipewire rdp remoting +resize-optimization screen-sharing +suid systemd test wayland-compositor webp +X xwayland"
+IUSE="colord +desktop +drm editor examples fbdev fullscreen +gles2 headless ivi jpeg +launch lcms pipewire -rdp remoting +resize-optimization screen-sharing +suid systemd test wayland-compositor webp +X xwayland"
 RESTRICT="!test? ( test )"
 
 REQUIRED_USE="
@@ -63,7 +63,7 @@ RDEPEND="
 	)
 	editor? ( x11-libs/pango )
 	gles2? (
-		media-libs/mesa[gles2,wayland]
+		media-libs/mesa[wayland]
 	)
 	pipewire? ( >=media-video/pipewire-0.2 )
 	rdp? ( >=net-misc/freerdp-2.0.0_rc2:= )
