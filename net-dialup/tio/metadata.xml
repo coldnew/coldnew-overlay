@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://liguros.gitlab.io/dtd/metadata.dtd">
+<pkgmetadata>
+ <maintainer type="person">
+  <email>kurt@kmk-computers.de</email>
+  <name>Kurt Kanzenbach</name>
+ </maintainer>
+ <longdescription lang="en">
+    "tio" is a simple TTY terminal application which features a straightforward
+    commandline interface to easily connect to TTY devices for basic
+    input/output.
+  </longdescription>
+ 
+ <origin>gentoo-guru-overlay</origin>
+</pkgmetadata>
