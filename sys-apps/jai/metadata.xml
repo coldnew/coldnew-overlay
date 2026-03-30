@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>maintainer@example.com</email>
+		<name>Maintainer</name>
+	</maintainer>
+	<longdescription>An ultra lightweight jail for AI CLIs on modern linux. Jai runs commands in a sandboxed environment with restricted access to the filesystem.</longdescription>
+	<use flags>
+		<flag name="bash-completion">Enable bash completion support</flag>
+	</use>
+</pkgmetadata>

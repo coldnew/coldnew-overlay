@@ -1,0 +1,30 @@
+diff --git a/jai.cc b/jai.cc
+index 37fbafd..73377c9 100644
+--- a/jai.cc
++++ b/jai.cc
+@@ -698,10 +698,11 @@ Config::make_env()
+     setenv_.try_emplace(std::string(sv), *e);
+   }
+ 
+-  std::vector<const char *> ret(std::from_range,
+-                                setenv_ | std::views::transform([](auto &kv) {
+-                                  return kv.second.c_str();
+-                                }));
++  std::vector<const char *> ret;
++  ret.reserve(setenv_.size());
++  for (auto &kv : setenv_) {
++    ret.push_back(kv.second.c_str());
++  }
+   ret.push_back(nullptr);
+   return ret;
+ }
+@@ -1200,7 +1201,8 @@ The default is CMD.conf if it exists, otherwise default.conf)",
+ 
+   std::vector<char *> cmd;
+   try {
+-    cmd.assign_range(opts->parse_argv(argc, argv));
++    auto args = opts->parse_argv(argc, argv);
++    cmd.insert(cmd.end(), args.begin(), args.end());
+   } catch (Options::Error &e) {
+     warn("{}", e.what());
+     usage(2);
