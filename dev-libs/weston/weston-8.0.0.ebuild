@@ -109,7 +109,7 @@ src_configure() {
 		$(meson_use xwayland)
 		$(meson_use systemd)
 		$(meson_use remoting)
-		$(meson_use pipewire)
+		-Dpipewire=false
 		$(meson_use desktop shell-desktop)
 		$(meson_use fullscreen shell-fullscreen)
 		$(meson_use ivi shell-ivi)
