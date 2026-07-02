@@ -8,7 +8,7 @@ inherit cmake
 DESCRIPTION="Cross-platform library for building Telegram clients"
 HOMEPAGE="https://github.com/tdlib/td"
 
-MY_PV="f06b0bac65278b03d26414c096080e7bfecfef52"
+MY_PV="7f163d850abbebecf749e99fb412271cc1f4e805"
 SRC_URI="https://github.com/tdlib/td/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/td-${MY_PV}"
 
