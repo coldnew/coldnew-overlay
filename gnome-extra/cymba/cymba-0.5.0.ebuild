@@ -49,6 +49,7 @@ CRATES="
 	event-listener@5.4.2
 	fastrand@2.5.0
 	field-offset@0.3.6
+	filedesc@0.6.3
 	find-msvc-tools@0.1.15
 	futures-channel@0.3.34
 	futures-core@0.3.34
@@ -162,6 +163,7 @@ CRATES="
 	thread_local@1.1.10
 	tokio-macros@2.7.2
 	tokio@1.54.1
+	tokio-seqpacket@0.9.1
 	toml@1.1.6+spec-1.1.0
 	toml_datetime@1.1.1+spec-1.1.0
 	toml_edit@0.25.15+spec-1.1.0
@@ -216,7 +218,7 @@ LICENSE+="
 	Unlicense ZLIB
 "
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="amd64 ~amd64"
 IUSE="+mic"
 
 RUST_MIN_VER="1.92"
